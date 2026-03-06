@@ -13,7 +13,7 @@ setup(
     description="Una aplicación Django para gestionar instrumentos psicopedagógicos",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/juanbacan/django-instrumentos-app",  # URL del repositorio (cuando esté en GitHub)
+    url="https://github.com/juanbacan/django_instrumentos_app",  # URL del repositorio (cuando esté en GitHub)
     classifiers=[
         "Framework :: Django",
         "Programming Language :: Python :: 3",
