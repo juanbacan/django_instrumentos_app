@@ -1,0 +1,3 @@
+recursive-include simulador/templates *
+recursive-include simulador/static *
+recursive-include simulador/locale *

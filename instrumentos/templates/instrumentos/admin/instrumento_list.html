@@ -1,0 +1,15 @@
+{% extends 'core/layout/list.html' %}
+
+{% block extra_buttons %}
+    <a class="btn btn-sm btn-primary formmodal" 
+       href="javascript:void(0);"
+       nhref="{{ path }}?action=importar"
+       data-bs-toggle="tooltip"
+       title="Importar test desde archivo JSON">
+        <i class="fa-solid fa-file-import"></i> Importar JSON
+    </a>
+{% endblock %}
+
+{% block extra_filters %}
+<!-- Filtros adicionales específicos para instrumentos si se necesitan -->
+{% endblock %}

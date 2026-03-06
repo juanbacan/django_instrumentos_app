@@ -1,0 +1,586 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+{% load core_extras %}
+{% load l10n %}
+
+{% block title %}{{ instrumento.nombre }} - Evaluación{% endblock %}
+
+{% block meta_tags %}
+    <title>Realizando: {{ instrumento.nombre }} | {{ application.titulo_sitio }}</title>
+    <meta name="title" content="Realizando: {{ instrumento.nombre }}"/>
+    <meta name="description" content="Estás realizando la evaluación {{ instrumento.nombre }}. Pregunta {{ pagina_obj.start_index }}-{{ pagina_obj.end_index }} de {{ total_preguntas }}."/>
+{% endblock %}
+
+{% block canonical %}
+    <meta name="robots" content="noindex, nofollow"/>
+    <link rel="canonical" href="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}">
+{% endblock %}
+
+{% block meta_social %}
+    <meta property="og:site_name" content="{{ application.titulo_sitio }}"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:url" content="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}"/>
+    <meta property="og:title" content="{{ instrumento.nombre }} - Evaluación Psicométrica"/>
+    <meta property="og:description" content="{{ instrumento.descripcion|default:'Realiza esta evaluación psicométrica profesional'|truncatewords:30 }}"/>
+    {% if application.social_images %}
+        <meta property="og:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+        <meta property="twitter:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image"/>
+{% endblock %}
+
+{% block extracss %}
+<style>
+    /* Progreso fijo en la parte superior */
+    .progress-fixed {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: white;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        padding: 0.75rem 0;
+        backdrop-filter: blur(10px);
+    }
+
+    .progress-fixed .progress {
+        height: 12px;
+        border-radius: 1rem;
+        background-color: var(--bs-tertiary-bg);
+        overflow: hidden;
+    }
+
+    .progress-fixed .progress-bar {
+        transition: width 0.4s ease-in-out, background-color 0.3s ease;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .progress-fixed {
+            padding: 0.65rem 0;
+        }
+
+        .progress-fixed h5 {
+            font-size: 1rem;
+        }
+
+        .progress-fixed .progress {
+            height: 10px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .progress-fixed {
+            padding: 0.5rem 0;
+        }
+
+        .progress-fixed h5 {
+            font-size: 0.95rem;
+        }
+
+        .progress-fixed small {
+            font-size: 0.72rem;
+        }
+
+        .progress-fixed .progress {
+            height: 8px;
+        }
+
+        .progress-fixed .progress-bar {
+            font-size: 0;
+        }
+
+        .progress-fixed .row {
+            margin-bottom: 0.35rem !important;
+        }
+    }
+
+/* --- ESTILO ELEGANTE PARA TARJETA DE PREGUNTA --- */
+    .pregunta-card {
+        background: #ffffff;
+        border: none;
+        border-radius: 1.25rem;
+        padding: 1.75rem 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); /* Sombra muy suave */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .pregunta-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Badge del número (Más limpio y circular) */
+    .pregunta-badge {
+        background: var(--bs-primary-bg-subtle) !important;
+        color: var(--bs-primary) !important;
+        border-radius: 50%;
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: 700;
+        padding: 0 !important;
+        flex-shrink: 0; /* Evita que el número se aplaste en mobile */
+    }
+
+    .pregunta-texto {
+        font-size: 1.15rem;
+        font-weight: 500;
+        line-height: 1.5;
+        color: #2b3440; /* Un tono oscuro más elegante que el negro puro */
+        margin: 0;
+    }
+
+    /* --- GRID DE RESPUESTAS MODERNIZADO --- */
+    .respuesta-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(110px, 1fr));
+        gap: 0.85rem;
+        margin-top: 1.5rem;
+    }
+
+    .respuesta-option {
+        width: 100%;
+        min-height: 90px;
+        border: 2px solid var(--bs-border-color-translucent); /* Borde un poco más grueso pero sutil */
+        border-radius: 1rem;
+        background-color: transparent;
+        color: var(--bs-body-color);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.25rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Transición más fluida */
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+    }
+
+    .respuesta-option:hover {
+        border-color: rgba(var(--bs-primary-rgb), 0.4);
+        background-color: rgba(var(--bs-primary-rgb), 0.02);
+    }
+
+    .respuesta-option .valor {
+        font-size: 1.1rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--bs-secondary-color);
+        transition: color 0.2s ease;
+    }
+
+    .respuesta-option .etiqueta {
+        font-size: 0.85rem;
+        line-height: 1.2;
+        color: var(--bs-secondary-color);
+    }
+
+    /* Estado Seleccionado */
+    .btn-check:checked + .respuesta-option {
+        border-color: var(--bs-primary);
+        background-color: var(--bs-primary-bg-subtle);
+        box-shadow: 0 4px 15px rgba(var(--bs-primary-rgb), 0.15); /* Resplandor del color primario */
+        transform: scale(1.03); /* Efecto pop al seleccionar */
+    }
+
+    .btn-check:checked + .respuesta-option .valor {
+        color: var(--bs-primary);
+    }
+
+    .btn-check:checked + .respuesta-option .etiqueta {
+        color: var(--bs-primary-text-emphasis);
+        font-weight: 600;
+    }
+
+    /* --- OPTIMIZACIÓN EXTREMA PARA MÓVIL --- */
+    @media (max-width: 992px) {
+        .respuesta-grid {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+    }
+
+    @media (max-width: 576px) {
+        .pregunta-card {
+            /* Reducimos el padding horizontal para ganar espacio para el texto */
+            padding: 1.25rem 0.85rem; 
+            margin-bottom: 1.5rem !important;
+            border-radius: 1rem;
+        }
+
+        .pregunta-badge {
+            width: 34px;
+            height: 34px;
+            font-size: 0.95rem;
+            margin-right: 0.75rem !important; /* Menos espacio entre número y texto */
+        }
+
+        .pregunta-texto {
+            font-size: 1.05rem;
+            line-height: 1.4;
+        }
+
+        .respuesta-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.65rem;
+        }
+
+        .respuesta-option {
+            min-height: 80px;
+            padding: 0.6rem 0.4rem;
+        }
+    }
+
+    /* Botones de navegación fijos abajo */
+    .navigation-fixed {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 1px solid var(--bs-border-color-translucent);
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+        padding: 0.75rem 0;
+        margin-top: 3rem;
+    }
+
+    .btn-nav {
+        min-width: 120px;
+        font-weight: 600;
+        border-radius: 0.65rem;
+        padding: 0.7rem 1.35rem;
+        transition: all 0.2s ease-in-out;
+        border: 2px solid transparent;
+        font-size: 0.95rem;
+    }
+
+    .btn-nav-back {
+        background: var(--bs-light);
+        color: var(--bs-body-color);
+        border-color: var(--bs-border-color);
+    }
+
+    .btn-nav-back:hover {
+        background: var(--bs-tertiary-bg);
+        border-color: var(--bs-primary);
+        color: var(--bs-primary);
+        transform: translateX(-3px);
+    }
+
+    .btn-nav-next {
+        background: var(--bs-primary);
+        color: white;
+        border-color: var(--bs-primary);
+    }
+
+    .btn-nav-next:hover {
+        background: var(--bs-primary-hover, var(--bs-primary));
+        border-color: var(--bs-primary-hover, var(--bs-primary));
+        transform: translateX(3px);
+        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+    }
+
+    .btn-nav-finalizar {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-color: #059669;
+    }
+
+    .btn-nav-finalizar:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: scale(1.03);
+        box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+    }
+
+    .page-indicator {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: transparent;
+        border-radius: 0;
+        padding: 0;
+        font-size: 0.85rem;
+        color: var(--bs-secondary-color);
+        font-weight: 500;
+        white-space: nowrap;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+        .navigation-fixed {
+            padding: 0.65rem 0;
+        }
+
+        .btn-nav {
+            min-width: 90px;
+            padding: 0.6rem 1rem;
+            font-size: 0.88rem;
+        }
+
+        .page-indicator {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .navigation-fixed {
+            padding: 0.5rem 0;
+        }
+
+        .btn-nav {
+            padding: 0.55rem 0.85rem;
+            font-size: 0.85rem;
+            min-width: auto;
+            flex: 1;
+            border-radius: 0.5rem;
+        }
+
+        .btn-nav i {
+            font-size: 0.85rem;
+        }
+
+        .page-indicator {
+            position: absolute;
+            top: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            background: white;
+            padding: 0.25rem 0.65rem;
+            border-radius: 1rem;
+            border: 1px solid var(--bs-border-color-translucent);
+        }
+
+        .page-indicator i {
+            font-size: 0.7rem;
+        }
+
+        .nav-controls {
+            gap: 0.5rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Barra de progreso fija superior -->
+<div class="progress-fixed">
+    <div class="container">
+        <div class="row align-items-center mb-2">
+            <div class="col-md-8">
+                <h5 class="mb-0">{{ instrumento.nombre }}</h5>
+                <small class="text-muted">
+                    Página {{ pagina_obj.number }} de {{ pagina_obj.paginator.num_pages }}
+                </small>
+            </div>
+            <div class="col-md-4 text-end">
+                <strong class="text-primary" id="totalRespondidas">{{ total_respondidas }}</strong> / {{ total_preguntas }} preguntas
+            </div>
+        </div>
+        <div class="progress" style="height: 12px;">
+            <div id="progressBar" class="progress-bar {% if porcentaje_progreso < 50 %}bg-warning{% elif porcentaje_progreso < 100 %}bg-info{% else %}bg-success{% endif %}" 
+                 role="progressbar" 
+                 style="width: {{ porcentaje_progreso|floatformat:0|unlocalize }}%"
+                 aria-valuenow="{{ porcentaje_progreso|floatformat:2|unlocalize }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+                {{ porcentaje_progreso|floatformat:0 }}%
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-background">
+    <form method="post" id="evaluacionForm">
+        <div class="container py-4">
+            {% csrf_token %}
+            <input type="hidden" name="pagina" value="{{ pagina_obj.number }}">
+            <input type="hidden" name="accion" id="accionInput" value="guardar">
+            
+            <!-- Preguntas de la página actual -->
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10 col-xl-9">
+                {% for item in pagina_obj %}
+                    <div class="pregunta-card mb-4">
+                        <div class="d-flex align-items-center">
+                            <div class="pregunta-badge me-3">
+                                {{ forloop.counter|add:pagina_obj.start_index|add:"-1" }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="pregunta-texto">{{ item.texto }}</h5>
+                            </div>
+                        </div>
+                        
+                        <div class="respuesta-grid" role="radiogroup" aria-label="Opciones para la pregunta {{ forloop.counter|add:pagina_obj.start_index|add:'-1' }}">
+                            {% for opcion in opciones %}
+                                <div>
+                                    <input
+                                        class="btn-check respuesta-radio"
+                                        type="radio"
+                                        name="item_{{ item.id }}"
+                                        id="item_{{ item.id }}_opcion_{{ opcion.id }}"
+                                        value="{{ opcion.id }}"
+                                        {% if respuestas_guardadas|get_item:item.id == opcion.id %}checked{% endif %}>
+                                    <label
+                                        class="respuesta-option"
+                                        for="item_{{ item.id }}_opcion_{{ opcion.id }}">
+                                        <span class="valor">{{ opcion.valor_nominal }}</span>
+                                        <span class="etiqueta">{{ opcion.etiqueta }}</span>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+        <!-- Navegación fija inferior -->
+        <div class="navigation-fixed">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-lg-10 col-xl-9">
+                        <div class="position-relative">
+                            <!-- Indicador de página (flotante en móvil) -->
+                            <div class="page-indicator">
+                                <i class="fa-solid fa-clipboard-list me-1"></i>
+                                <span class="d-none d-sm-inline">Preguntas </span>{{ pagina_obj.start_index }}-{{ pagina_obj.end_index }} <span class="d-none d-sm-inline">de</span><span class="d-inline d-sm-none">/</span>{{ total_preguntas }}
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center nav-controls">
+                                <!-- Botón Anterior -->
+                                {% if pagina_obj.has_previous %}
+                                    <button type="submit" name="siguiente_pagina" value="{{ pagina_obj.previous_page_number }}" 
+                                            class="btn btn-nav btn-nav-back rounded-pill">
+                                        <i class="fa-solid fa-chevron-left me-1"></i><span class="d-none d-sm-inline">Anterior</span><span class="d-inline d-sm-none">Atrás</span>
+                                    </button>
+                                {% else %}
+                                    <div class="d-none d-sm-block"></div>
+                                {% endif %}
+
+                                <!-- Botón Siguiente o Finalizar -->
+                                {% if es_ultima_pagina %}
+                                    <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill" id="btnFinalizar">
+                                        <i class="fa-solid fa-check-circle me-1"></i>Finalizar
+                                    </button>
+                                {% else %}
+                                    <button type="submit" name="siguiente_pagina" value="{{ pagina_obj.next_page_number }}" 
+                                            class="btn btn-nav btn-nav-next rounded-pill">
+                                        <span class="d-none d-sm-inline">Siguiente</span><span class="d-inline d-sm-none">Siguiente</span><i class="fa-solid fa-chevron-right ms-1"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('evaluacionForm');
+        const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const progressBar = document.getElementById('progressBar');
+        const totalRespondidasEl = document.getElementById('totalRespondidas');
+
+        let cambiosSinGuardar = false;
+        let guardadoEnCurso = 0;
+
+        function actualizarProgressBar(totalRespondidas, porcentaje) {
+            const porcentajeSeguro = Math.max(0, Math.min(100, Number(porcentaje) || 0));
+            progressBar.style.width = `${porcentajeSeguro}%`;
+            progressBar.setAttribute('aria-valuenow', porcentajeSeguro.toFixed(2));
+            progressBar.textContent = `${Math.round(porcentajeSeguro)}%`;
+            totalRespondidasEl.textContent = totalRespondidas;
+
+            progressBar.classList.remove('bg-warning', 'bg-info', 'bg-success');
+            if (porcentajeSeguro < 50) {
+                progressBar.classList.add('bg-warning');
+            } else if (porcentajeSeguro < 100) {
+                progressBar.classList.add('bg-info');
+            } else {
+                progressBar.classList.add('bg-success');
+            }
+        }
+
+        async function guardarRespuesta(input) {
+            const itemId = input.name.replace('item_', '');
+            const opcionId = input.value;
+            const payload = new URLSearchParams();
+
+            payload.append('csrfmiddlewaretoken', csrfToken);
+            payload.append('accion', 'guardar_respuesta');
+            payload.append('item_id', itemId);
+            payload.append('opcion_id', opcionId);
+
+            cambiosSinGuardar = true;
+            guardadoEnCurso += 1;
+
+            try {
+                const response = await fetch(`${window.location.pathname}${window.location.search}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: payload.toString()
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.ok) {
+                    actualizarProgressBar(data.total_respondidas, data.porcentaje_progreso);
+                    cambiosSinGuardar = false;
+                }
+            } catch (error) {
+                // Si falla la petición, se conserva la advertencia al salir sin guardar.
+            } finally {
+                guardadoEnCurso = Math.max(0, guardadoEnCurso - 1);
+            }
+        }
+
+        form.addEventListener('change', function(e) {
+            if (e.target.classList.contains('respuesta-radio')) {
+                guardarRespuesta(e.target);
+            }
+        });
+
+        // Prevenir doble submit en finalizar
+        const btnFinalizar = document.getElementById('btnFinalizar');
+        const accionInput = document.getElementById('accionInput');
+        
+        if (btnFinalizar) {
+            btnFinalizar.addEventListener('click', function(e) {
+                e.preventDefault();
+                accionInput.value = 'finalizar';
+                btnFinalizar.disabled = true;
+                btnFinalizar.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Finalizando...';
+                form.submit();
+            });
+        }
+
+        form.addEventListener('submit', function() {
+            cambiosSinGuardar = false;
+        });
+
+        window.addEventListener('beforeunload', function(e) {
+            if (cambiosSinGuardar || guardadoEnCurso > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    });
+</script>
+{% endblock %}

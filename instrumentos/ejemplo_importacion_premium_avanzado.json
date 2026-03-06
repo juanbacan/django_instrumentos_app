@@ -1,0 +1,166 @@
+{
+  "instrumento": {
+    "nombre": "Liderazgo y Gestión Educativa - Premium",
+    "slug": "liderazgo-gestion-premium",
+    "descripcion": "Evaluación avanzada de competencias de liderazgo para directivos y gestores educativos. Incluye retroalimentación personalizada por nivel de desempeño.",
+    "activo": true,
+    "premium": true
+  },
+  "escalas": [
+    {"etiqueta": "Totalmente en desacuerdo", "valor": 1, "orden": 1},
+    {"etiqueta": "En desacuerdo", "valor": 2, "orden": 2},
+    {"etiqueta": "Neutral", "valor": 3, "orden": 3},
+    {"etiqueta": "De acuerdo", "valor": 4, "orden": 4},
+    {"etiqueta": "Totalmente de acuerdo", "valor": 5, "orden": 5}
+  ],
+  "dimensiones": [
+    {
+      "nombre": "Visión Estratégica",
+      "descripcion": "Capacidad para definir y comunicar direcciones claras",
+      "orden": 1,
+      "items": [
+        {
+          "texto": "Defino objetivos educativos claros y comunicables para toda la institución.",
+          "es_inverso": false,
+          "orden": 1
+        },
+        {
+          "texto": "Alinear las decisiones diarias con la visión institucional es un desafío para mí.",
+          "es_inverso": true,
+          "orden": 2
+        },
+        {
+          "texto": "Tengo un plan estratégico bien definido para alcanzar metas educativas.",
+          "es_inverso": false,
+          "orden": 3
+        },
+        {
+          "texto": "Comunico la visión de forma que inspira a docentes y estudiantes.",
+          "es_inverso": false,
+          "orden": 4
+        }
+      ],
+      "niveles_retroalimentacion": [
+        {
+          "nombre_nivel": "Nivel 1: Visión Incipiente",
+          "porcentaje_min": 0.00,
+          "porcentaje_max": 24.99,
+          "mensaje_feedback": "<div style='background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ff6b6b;'><h4 style='color: #d32f2f; margin-top: 0;'>⚠️ Diagnóstico: Estrategia Poco Definida</h4><p>Tu capacidad para establecer una visión estratégica se encuentra en fase inicial. Tu institución podría estar navegando sin dirección clara, lo que afecta la cohesión del equipo.</p><h5>🎯 Áreas Críticas:</h5><ul><li>Falta precisión en la definición de objetivos educativos</li><li>La visión no es clara ni inspiradora para el equipo</li><li>Desalineación entre decisiones y metas institucionales</li></ul><h5>💡 Plan de Mejora Urgente:</h5><ol><li><strong>En el próximo mes:</strong> Convoca un retiro de planificación estratégica con junta directiva</li><li><strong>Diagnosis participativa:</strong> Realiza encuestas al equipo docente sobre claridad de objetivos</li><li><strong>Planificación colaborativa:</strong> Co-crea la visión con directores de área y docentes líderes</li><li><strong>Capacitación:</strong> Toma curso de liderazgo estratégico (recomendamos IIPE-UNESCO)</li></ol><h5>📋 Recursos Recomendados:</h5><ul><li>Libro: 'The Goal' de Eliyahu Goldratt (aplicado a educación)</li><li>Webinar: 'Strategic Planning for Educational Leaders' (edX)</li><li>Mentor: Busca un director experimentado para mentoría</li></ul></div>"
+        },
+        {
+          "nombre_nivel": "Nivel 2: Visión en Desarrollo",
+          "porcentaje_min": 25.00,
+          "porcentaje_max": 49.99,
+          "mensaje_feedback": "<div style='background-color: #fff3e5; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;'><h4 style='color: #e65100; margin-top: 0;'>🔄 Diagnóstico: Visión Emergente</h4><p>Tienes elementos de una estrategia, pero le falta claridad, consistencia y poder de comunicación. Tu equipo probablemente tiene comprensión parcial de los objetivos.</p><h5>🎯 Puntos Fuertes:</h5><ul><li>✓ Reconoces la importancia de una visión clara</li><li>✓ Tienes algunos objetivos definidos</li><li>✓ Intentas alinear decisiones (aunque inconsistentemente)</li></ul><h5>💡 Estrategia de Fortalecimiento:</h5><ol><li><strong>Clarificación:</strong> Revisa y refuerza tus 3-5 objetivos estratégicos (evita más de 5)</li><li><strong>Comunicación:</strong> Establece un ciclo mensual de comunicación de visión (asambleas, boletines)</li><li><strong>Revisión:</strong> Implementa reuniones quincenales de alineamiento con directores</li><li><strong>Visibilización:</strong> Crea señalética y materiales visuales de la visión en toda la institución</li></ol><h5>📊 Métricas a Seguir:</h5><ul><li>% de docentes que conocen los 3 objetivos principales (meta: 85%)</li><li>Consistencia de decisiones alineadas a visión (evalúa mensualmente)</li><li>Engagement del equipo en cumplimiento de objetivos</li></ul></div>"
+        },
+        {
+          "nombre_nivel": "Nivel 3: Visión Consolidada",
+          "porcentaje_min": 50.00,
+          "porcentaje_max": 74.99,
+          "mensaje_feedback": "<div style='background-color: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;'><h4 style='color: #2e7d32; margin-top: 0;'>✅ Diagnóstico: Liderazgo Estratégico Funcional</h4><p>Tu capacidad de liderazgo estratégico es sólida. Tu institución tiene dirección clara y la mayoría del equipo está alineado. Estás en camino a ser un líder estratégico de alto desempeño.</p><h5>🎯 Fortalezas Identificadas:</h5><ul><li>✓ Visión clara y comunicable</li><li>✓ Buen nivel de alineamiento del equipo</li><li>✓ Decisiones generalmente orientadas a objetivos</li><li>✓ Demuestras inspiración a otros</li></ul><h5>🚀 Plan de Excelencia:</h5><ol><li><strong>Profundización:</strong> Refina la estrategia: agrega indicadores de éxito específicos (OKRs)</li><li><strong>Innovación:</strong> Introduce elementos ágiles en tu planificación estratégica</li><li><strong>Cascada:</strong> Asegura que cada área tenga su 'mini-visión' alineada</li><li><strong>Diferenciación:</strong> Identifica competencias únicas que te diferencian en el mercado educativo</li></ol><h5>📈 Próximos Desafíos:</h5><ul><li>Implementar OKRs (Objectives & Key Results) en toda la institución</li><li>Desarrollar líderes intermedios en pensamiento estratégico</li><li>Crear reportes visuales mensuales de progreso vs. visión</li><li>Facilitar sesiones de retrospectiva estratégica trimestral</li></ul></div>"
+        },
+        {
+          "nombre_nivel": "Nivel 4: Visión Excepcional",
+          "porcentaje_min": 75.00,
+          "porcentaje_max": 100.00,
+          "mensaje_feedback": "<div style='background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #1976d2;'><h4 style='color: #0d47a1; margin-top: 0;'>🏆 Diagnóstico: Liderazgo Estratégico de Excelencia</h4><p>Eres un <strong>líder estratégico excepcional</strong>. Tu visión es clara, inspiradora y transformadora. Tu institución no solo sabe hacia dónde va, sino que cree en ese destino y trabaja apasionadamente para lograrlo.</p><h5>🎯 Competencias Sobresalientes:</h5><ul><li>✓✓ Visión transformadora y profundamente inspiradora</li><li>✓✓ Excelente alineamiento estratégico en toda la organización</li><li>✓✓ Comunicas con poder narrativo que moviliza al equipo</li><li>✓✓ Tu institución es modelo de claridad estratégica</li><li>✓✓ Capacidad de anticipar cambios y adaptar estrategia</li></ul><h5>🌟 Rol de Liderazgo Estratégico:</h5><p>Ya no solo líderes tu institución —eres un <strong>transformador educativo</strong>. Considera:</p><ol><li><strong>Mentoría:</strong> Desarrolla otros líderes estratégicos en tu región/país</li><li><strong>Influencia:</strong> Comparte tu modelo de liderazgo en conferencias y publicaciones</li><li><strong>Innovación a escala:</strong> Expande tu modelo a otras instituciones</li><li><strong>Pensamiento sistémico:</strong> Contribuye a cambios de política pública educativa</li></ol><h5>🎖️ Recomendaciones Exclusivas:</h5><ul><li>Busca rol de liderazgo en redes o asociaciones educativas nacionales</li><li>Publica artículos sobre tu modelo estratégico</li><li>Considera diplomados y doctorados en liderazgo educativo</li><li>Participa en espacios de decisión política educativa</li><li>Sé embajador de excelencia educativa en tu contexto</li></ul><p style='margin-top: 20px; font-style: italic; color: #0d47a1;'>\"El verdadero liderazgo no es solo dirigir hacia un destino, sino inspirar a otros a creer en ese destino y trabajar apasionadamente para lograrlo.\"</p></div>"
+        }
+      ]
+    },
+    {
+      "nombre": "Gestión del Talento Humano",
+      "descripcion": "Capacidad para atraer, desarrollar y retener talento",
+      "orden": 2,
+      "items": [
+        {
+          "texto": "Identifico fortalezas y áreas de crecimiento en cada miembro del equipo.",
+          "es_inverso": false,
+          "orden": 1
+        },
+        {
+          "texto": "Tengo dificultad para motivar docentes con bajo desempeño.",
+          "es_inverso": true,
+          "orden": 2
+        },
+        {
+          "texto": "Desarrollo planes personalizados de crecimiento profesional para mis colaboradores.",
+          "es_inverso": false,
+          "orden": 3
+        },
+        {
+          "texto": "La retención de talento es una preocupación permanente en mi institución.",
+          "es_inverso": true,
+          "orden": 4
+        }
+      ],
+      "niveles_retroalimentacion": [
+        {
+          "nombre_nivel": "Nivel 1: Gestión Reactiva",
+          "porcentaje_min": 0.00,
+          "porcentaje_max": 24.99,
+          "mensaje_feedback": "<div style='background-color: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #d32f2f;'><h4 style='color: #b71c1c; margin-top: 0;'>🆘 Diagnóstico: Gestión de Talentos Débil</h4><p>Tu aproximación a la gestión de talento es reactiva y poco estructurada. Alto riesgo de rotación de personal, conflictos y bajo desempeño.</p><h5>⚡ Acciones Inmediatas:</h5><ol><li>Este mes: Realiza diagnostico de satisfacción del equipo (encuesta anónima)</li><li>Identifica los 3 docentes con mayor potencial y define planes de retención</li><li>Establece ciclo mensual de reuniones 1-a-1 con directores</li></ol></div>"
+        },
+        {
+          "nombre_nivel": "Nivel 2: Gestión en Construcción",
+          "porcentaje_min": 25.00,
+          "porcentaje_max": 49.99,
+          "mensaje_feedback": "<div style='background-color: #fff3e5; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;'><h4 style='color: #e65100; margin-top: 0;'>🔧 Diagnóstico: Gestión Emergente de Talento</h4><p>Estás construyendo procesos de gestión de talento, pero falta sistematización y profundidad en el desarrollo individual.</p><h5>💡 Mejoras Recomendadas:</h5><ul><li>Implementar matriz DAFO para cada colaborador</li><li>Crear sistema de mentoría entre pares (docentes expertos - novatos)</li><li>Establecer criterios claros de evaluación y desarrollo</li></ul></div>"
+        },
+        {
+          "nombre_nivel": "Nivel 3: Gestión Efectiva",
+          "porcentaje_min": 50.00,
+          "porcentaje_max": 74.99,
+          "mensaje_feedback": "<div style='background-color: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #388e3c;'><h4 style='color: #1b5e20; margin-top: 0;'>✅ Diagnóstico: Gestión de Talento Sólida</h4><p>Tienes un sistema de gestión de talento que funciona bien. Tu equipo está desarrollándose y hay baja rotación.</p><h5>🎯 Próximas Mejoras:</h5><ul><li>Crear programas de sucesión para roles críticos</li><li>Implementar sistema de incentivos diferenciados</li><li>Desarrollar líderes intermedios</li></ul></div>"
+        },
+        {
+          "nombre_nivel": "Nivel 4: Gestión Transformacional",
+          "porcentaje_min": 75.00,
+          "porcentaje_max": 100.00,
+          "mensaje_feedback": "<div style='background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #1565c0;'><h4 style='color: #0d47a1; margin-top: 0;'>🏆 Diagnóstico: Gestión de Talento Excepcional</h4><p>Eres maestro en identificar, desarrollar y retener talento. Tu institución es conocida como lugar preferido para trabajar.</p><h5>🌟 Tu Impacto:</h5><ul><li>Alta retención de docentes de excelencia</li><li>Cultura de crecimiento permanente</li><li>Líderes que surgen de tu institución son modelos en otras partes</li></ul></div>"
+        }
+      ]
+    },
+    {
+      "nombre": "Innovación Educativa",
+      "descripcion": "Capacidad para impulsar cambios e innovaciones didácticas",
+      "orden": 3,
+      "items": [
+        {
+          "texto": "Implemento metodologías innovadoras basadas en evidencia pedagógica.",
+          "es_inverso": false,
+          "orden": 1
+        },
+        {
+          "texto": "Me resisto a cambios que podrían alterar mi zona de confort.",
+          "es_inverso": true,
+          "orden": 2
+        },
+        {
+          "texto": "Tengo mecanismos para probar y evaluar nuevas prácticas educativas.",
+          "es_inverso": false,
+          "orden": 3
+        }
+      ],
+      "niveles_retroalimentacion": [
+        {
+          "nombre_nivel": "Nivel 1: Innovación Limitada",
+          "porcentaje_min": 0.00,
+          "porcentaje_max": 33.99,
+          "mensaje_feedback": "<div style='background-color: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #c62828;'><h4>🔴 Diagnóstico: Bajo Impulso Innovador</h4><p>Tu institución probablemente mantiene prácticas tradicionales sin evaluación de efectividad. El riesgo es quedarse rezagado en contextos que evolucionan rápidamente.</p><h5>⚡ Acción Urgente:</h5><ol><li>Crea comité de innovación educativa</li><li>Identifica 1-2 docentes innovadores como campeones del cambio</li><li>Implementa proyecto piloto pequeño en próximos 3 meses</li></ol></div>"
+        },
+        {
+          "nombre_nivel": "Nivel 2: Innovación Emergente",
+          "porcentaje_min": 34.00,
+          "porcentaje_max": 66.99,
+          "mensaje_feedback": "<div style='background-color: #fff3e5; padding: 15px; border-radius: 8px; border-left: 4px solid #f57c00;'><h4>🟠 Diagnóstico: Innovación en Construcción</h4><p>Tienes iniciativas innovadoras, pero les falta sistematización y evaluación rigurosa de impacto.</p><h5>💡 Consolidar Innovación:</h5><ul><li>Define framework de innovación con criterios de éxito</li><li>Crea fondo anual para innovación educativa</li><li>Documenta y comparte resultados de experimentos pedagógicos</li></ul></div>"
+        },
+        {
+          "nombre_nivel": "Nivel 3: Innovación Establecida",
+          "porcentaje_min": 67.00,
+          "porcentaje_max": 100.00,
+          "mensaje_feedback": "<div style='background-color: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #2e7d32;'><h4>🟢 Diagnóstico: Liderazgo en Innovación</h4><p>Tu institución es reconocida por innovación educativa fundada en evidencia. Eres modelo para otras instituciones.</p><h5>🚀 Expandir Impacto:</h5><ul><li>Publica casos de estudio de tus innovaciones</li><li>Lidera redes de innovación regional/nacional</li><li>Forma docentes de otras instituciones en tus metodologías</li></ul></div>"
+        }
+      ]
+    }
+  ]
+}

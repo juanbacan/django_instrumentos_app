@@ -1,0 +1,261 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+
+{% block title %}Detalle del Intento #{{ intento.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3 mb-0">
+                    <i class="fa-solid fa-clipboard-check me-2 text-primary"></i>
+                    Detalle del Intento #{{ intento.id }}
+                </h1>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-times me-2"></i>Cerrar
+                </button>
+            </div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="/evaluaciones/admin/intentos/">Intentos</a></li>
+                    <li class="breadcrumb-item active">Intento #{{ intento.id }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Información del Intento -->
+    <div class="row mb-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="fa-solid fa-info-circle text-primary me-2"></i>
+                        Información del Intento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Usuario</label>
+                            <p class="mb-0">
+                                <i class="fa-solid fa-user me-2"></i>
+                                <strong>{{ intento.usuario.username }}</strong>
+                                {% if intento.usuario.email %}
+                                <br>
+                                <small class="text-muted">{{ intento.usuario.email }}</small>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Instrumento</label>
+                            <p class="mb-0">
+                                <i class="fa-solid fa-clipboard-list me-2"></i>
+                                <strong>{{ intento.instrumento.nombre }}</strong>
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Estado</label>
+                            <p class="mb-0">
+                                {% if intento.completado %}
+                                <span class="badge bg-success">
+                                    <i class="fa-solid fa-check me-1"></i>Completado
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fa-solid fa-clock me-1"></i>En Progreso
+                                </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Fecha de Inicio</label>
+                            <p class="mb-0">
+                                <i class="fa-solid fa-calendar-day me-2"></i>
+                                {{ intento.inicio|date:"d/m/Y H:i:s" }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Fecha de Finalización</label>
+                            <p class="mb-0">
+                                {% if intento.fin %}
+                                <i class="fa-solid fa-calendar-check me-2"></i>
+                                {{ intento.fin|date:"d/m/Y H:i:s" }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if intento.completado and intento.resultados_brutos %}
+                    <hr class="my-4">
+                    <h6 class="mb-3">
+                        <i class="fa-solid fa-chart-bar text-info me-2"></i>
+                        Resultados por Dimensión
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Dimensión</th>
+                                    <th class="text-center">Puntaje</th>
+                                    <th class="text-end">Visualización</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dimension, puntaje in intento.resultados_brutos.items %}
+                                <tr>
+                                    <td>{{ dimension }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ puntaje }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="progress" style="width: 150px; margin-left: auto; height: 8px;">
+                                            <div class="progress-bar bg-info" 
+                                                 style="width: {% widthratio puntaje 100 100 %}%">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas del Lado -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm mb-3 bg-light">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="fa-solid fa-chart-pie text-success me-2"></i>
+                        Estadísticas
+                    </h6>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Total de Respuestas:</span>
+                            <strong class="badge bg-primary">{{ respuestas.count }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Dimensiones:</span>
+                            <strong class="badge bg-info">{{ intento.instrumento.dimensiones.count }}</strong>
+                        </div>
+                        {% if intento.fin and intento.inicio %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Duración:</span>
+                            <strong class="badge bg-success">
+                                {% widthratio intento.fin|timeuntil:intento.inicio 1 60 %} min
+                            </strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="fa-solid fa-link text-primary me-2"></i>
+                        Enlaces Rápidos
+                    </h6>
+                    <div class="d-grid gap-2">
+                        {% if intento.completado %}
+                        <a href="/evaluaciones/resultados/{{ intento.id }}/" 
+                           class="btn btn-sm btn-outline-success" target="_blank">
+                            <i class="fa-solid fa-external-link-alt me-2"></i>Ver Resultados Públicos
+                        </a>
+                        {% endif %}
+                        <a href="/evaluaciones/admin/respuestas/?intento__id={{ intento.id }}" 
+                           class="btn btn-sm btn-outline-info">
+                            <i class="fa-solid fa-list me-2"></i>Ver Respuestas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Respuestas Detalladas -->
+    {% if respuestas %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="fa-solid fa-list-check text-success me-2"></i>
+                        Respuestas Detalladas ({{ respuestas.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 15%;">Dimensión</th>
+                                    <th style="width: 50%;">Ítem</th>
+                                    <th style="width: 15%;">Opción Seleccionada</th>
+                                    <th style="width: 10%;" class="text-center">Valor</th>
+                                    <th style="width: 5%;" class="text-center">Inverso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for respuesta in respuestas %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ respuesta.item.dimension.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ respuesta.item.texto }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ respuesta.opcion.etiqueta }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">
+                                            {{ respuesta.opcion.valor_nominal }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if respuesta.item.es_inverso %}
+                                        <i class="fa-solid fa-check-circle text-warning" 
+                                           data-bs-toggle="tooltip" 
+                                           title="Ítem inverso"></i>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializar tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+
+{% block title %}Evaluaciones Disponibles{% endblock %}
+
+{% block meta_tags %}
+    <title>Evaluaciones Psicométricas Disponibles | {{ application.titulo_sitio }}</title>
+    <meta name="title" content="Evaluaciones Psicométricas Disponibles | {{ application.titulo_sitio }}"/>
+    <meta name="description" content="Explora nuestras evaluaciones psicométricas profesionales. Tests de orientación vocacional, personalidad y aptitudes para descubrir tu perfil profesional ideal."/>
+    <meta name="keywords" content="evaluaciones psicométricas, test vocacional, orientación profesional, test de personalidad, evaluación de aptitudes, pruebas psicológicas"/>
+{% endblock %}
+
+{% block canonical %}
+    <meta name="robots" content="index, follow"/>
+    <link rel="canonical" href="{{ application.url_safe }}{% url 'instrumentos:lista_evaluaciones' %}">
+{% endblock %}
+
+{% block meta_social %}
+    <meta property="og:site_name" content="{{ application.titulo_sitio }}"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="{{ application.url_safe }}{% url 'instrumentos:lista_evaluaciones' %}"/>
+    <meta property="og:title" content="Evaluaciones Psicométricas Disponibles | {{ application.titulo_sitio }}"/>
+    <meta property="og:description" content="Explora nuestras evaluaciones psicométricas profesionales. Tests de orientación vocacional, personalidad y aptitudes para descubrir tu perfil profesional ideal."/>
+    {% if application.social_images %}
+        <meta property="og:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+        <meta property="twitter:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:url" content="{{ application.url_safe }}{% url 'instrumentos:lista_evaluaciones' %}"/>
+    <meta name="twitter:title" content="Evaluaciones Psicométricas Disponibles"/>
+    <meta name="twitter:description" content="Explora nuestras evaluaciones psicométricas profesionales para descubrir tu perfil profesional ideal."/>
+{% endblock %}
+
+{% block content %}
+<div class="bg-background">
+    <div class="container py-5">
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 64px; height: 64px;">
+                        <i class="fa-solid fa-clipboard-list fa-2x"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1 fw-bold text-dark">Evaluaciones Disponibles</h1>
+                        <p class="text-muted mb-0">Explora y realiza las evaluaciones psicométricas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if instrumentos %}
+        <div class="row g-4">
+            {% for instrumento in instrumentos %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card modern-card rounded-4 border-0 h-100 border-0">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 class="card-title mb-0 fw-bold text-dark">{{ instrumento.nombre }}</h5>
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 border border-success border-opacity-25">
+                                    <i class="fa-solid fa-check me-1"></i> Activo
+                                </span>
+                            </div>
+                            <p class="card-text text-muted">
+                                {{ instrumento.descripcion|truncatewords:20|default:"Evaluación psicométrica disponible para ser completada." }}
+                            </p>
+                        </div>
+                        
+                        <div class="mt-auto pt-2">
+                            <a href="{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}" 
+                               class="btn btn-primary w-100 btn-action d-flex justify-content-center align-items-center rounded-pill">
+                                Ver Detalles <i class="fa-solid fa-arrow-right ms-2 icon-move"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card modern-card border-0 text-center py-5">
+                    <div class="card-body">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                            <i class="fa-solid fa-inbox fa-2x text-muted opacity-50"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-2">No hay evaluaciones disponibles</h4>
+                        <p class="text-muted mb-0">Por el momento no hay instrumentos activos para realizar.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    /* --- TARJETAS CON LA IDENTIDAD VISUAL CORRECTA --- */
+    .btn-action {
+        border-radius: 0.85rem;
+        font-weight: 600;
+        padding: 0.75rem 1.25rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-action .icon-move {
+        transition: transform 0.2s ease;
+    }
+
+    .btn-action:hover .icon-move {
+        transform: translateX(4px);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,104 @@
+{
+  "instrumento": {
+    "nombre": "Dimensión 2: Competencias Socioemocionales",
+    "slug": "dimension-2-socioemocional",
+    "descripcion": "Evaluación de habilidades y actitudes socioemocionales para el desempeño docente 2026.",
+    "activo": true
+  },
+  "escalas": [
+    {"etiqueta": "Nunca", "valor": 1, "orden": 1},
+    {"etiqueta": "Rara vez", "valor": 2, "orden": 2},
+    {"etiqueta": "A veces", "valor": 3, "orden": 3},
+    {"etiqueta": "Frecuentemente", "valor": 4, "orden": 4},
+    {"etiqueta": "Siempre", "valor": 5, "orden": 5}
+  ],
+  "dimensiones": [
+    {
+      "nombre": "Autorregulación",
+      "orden": 1,
+      "items": [
+        {"texto": "Mantengo la calma ante situaciones críticas en el aula.", "es_inverso": false, "orden": 1},
+        {"texto": "Me resulta difícil controlar mis impulsos bajo presión.", "es_inverso": true, "orden": 2},
+        {"texto": "Planifico mis emociones antes de entrar al salón de clases.", "es_inverso": false, "orden": 3}
+      ],
+      "niveles_retroalimentacion": [
+        {
+          "nombre_nivel": "Requiere Atención (Bajo)",
+          "porcentaje_min": 0.00,
+          "porcentaje_max": 33.99,
+          "mensaje_feedback": "<p><strong>Análisis:</strong> Tus resultados indican que situaciones de tensión pueden estar desbordando tu capacidad de respuesta. La autorregulación es fundamental para crear un ambiente aula positivo.</p><p><strong>Recomendaciones:</strong></p><ul><li>Implementa <strong>pausas activas</strong> durante tu jornada</li><li>Practica técnicas de <strong>respiración diafragmática</strong> (4-7-8)</li><li>Busca espacios de descompresión antes de entrar al aula</li><li>Considera cursos de <strong>mindfulness para docentes</strong></li></ul>"
+        },
+        {
+          "nombre_nivel": "Adecuado (Medio)",
+          "porcentaje_min": 34.00,
+          "porcentaje_max": 66.99,
+          "mensaje_feedback": "<p><strong>Análisis:</strong> Posees herramientas adecuadas para manejar conflictos y situaciones de estrés típicas. Sin embargo, bajo presión sostenida podrías experimentar desgaste emocional.</p><p><strong>Recomendaciones:</strong></p><ul><li>Mantén y refuerza tus estrategias actuales de manejo del estrés</li><li>Participa en <strong>grupos de apoyo</strong> con otros docentes</li><li>Desarrolla un <strong>plan personal de autocuidado</strong></li><li>Establece límites claros entre vida laboral y personal</li></ul>"
+        },
+        {
+          "nombre_nivel": "Óptimo (Alto)",
+          "porcentaje_min": 67.00,
+          "porcentaje_max": 100.00,
+          "mensaje_feedback": "<p><strong>¡Excelente!</strong> Muestras un <strong>alto grado de control emocional</strong> y eres capaz de separar los problemas personales de tu práctica docente.</p><p><strong>Fortalezas identificadas:</strong></p><ul><li>✓ Mantienes la calma ante adversidades</li><li>✓ Gestionas eficazmente tu estrés</li><li>✓ Eres modelo de autorregulación para tus estudiantes</li></ul><p><strong>Próximos pasos:</strong> Comparte tus estrategias con otros docentes y considera ser mentor en bienestar emocional.</p>"
+        }
+      ]
+    },
+    {
+      "nombre": "Empatía",
+      "orden": 2,
+      "items": [
+        {"texto": "Identifico con facilidad las emociones de mis estudiantes.", "es_inverso": false, "orden": 1},
+        {"texto": "Me cuesta entender el punto de vista de los padres cuando están molestos.", "es_inverso": true, "orden": 2},
+        {"texto": "Adapto mi comunicación según las necesidades emocionales de cada alumno.", "es_inverso": false, "orden": 3}
+      ],
+      "niveles_retroalimentacion": [
+        {
+          "nombre_nivel": "Requiere Atención (Bajo)",
+          "porcentaje_min": 0.00,
+          "porcentaje_max": 33.99,
+          "mensaje_feedback": "<p><strong>Análisis:</strong> Parece que la conexión emocional con estudiantes y familias necesita desarrollarse. La empatía es clave para crear relaciones significativas y reducir conflictos.</p><p><strong>Recomendaciones:</strong></p><ul><li>Participa en <strong>talleres de comunicación empática</strong></li><li>Practica la <strong>escucha activa</strong> sin juzgar</li><li>Realiza dinámicas de <strong>círculos de diálogo</strong> con estudiantes</li><li>Busca consultoría en relaciones interpersonales</li></ul>"
+        },
+        {
+          "nombre_nivel": "En Desarrollo (Medio)",
+          "porcentaje_min": 34.00,
+          "porcentaje_max": 66.99,
+          "mensaje_feedback": "<p><strong>Análisis:</strong> Tienes capacidad empática moderada. En ciertas situaciones conectas bien, pero en momentos de estrés tu comprensión podría mejorar.</p><p><strong>Recomendaciones:</strong></p><ul><li>Reflexiona sobre <strong>conflictos recientes</strong> y cómo hubieras reaccionado con más empatía</li><li>Participa en <strong>observaciones de clase entre colegas</strong> para aprender nuevas estrategias</li><li>Dedica tiempo consciente a <strong>conocer mejor a cada estudiante</strong></li><li>Realiza <strong>entrevistas breves</strong> con familias de manera regular</li></ul>"
+        },
+        {
+          "nombre_nivel": "Sobresaliente (Alto)",
+          "porcentaje_min": 67.00,
+          "porcentaje_max": 100.00,
+          "mensaje_feedback": "<p><strong>¡Enhorabuena!</strong> Demuestras una <strong>empatía excepcional</strong> hacia estudiantes y padres. Eres capaz de leer las emociones ajenas y responder con sensibilidad.</p><p><strong>Fortalezas identificadas:</strong></p><ul><li>✓ Escuchas activamente sin prejuzgar</li><li>✓ Adaptas tu comunicación según necesidades emocionales</li><li>✓ Creas un ambiente seguro para que otros se expresen</li></ul><p><strong>Próximos pasos:</strong> Comparte tu modelo empático en capacitaciones y mentoría con colegas.</p>"
+        }
+      ]
+    },
+    {
+      "nombre": "Habilidades Sociales",
+      "orden": 3,
+      "items": [
+        {"texto": "Establezco relaciones positivas con mis colegas fácilmente.", "es_inverso": false, "orden": 1},
+        {"texto": "Evito participar en actividades colaborativas con otros docentes.", "es_inverso": true, "orden": 2},
+        {"texto": "Resuelvo conflictos entre estudiantes de manera constructiva.", "es_inverso": false, "orden": 3}
+      ],
+      "niveles_retroalimentacion": [
+        {
+          "nombre_nivel": "Por Mejorar (Bajo)",
+          "porcentaje_min": 0.00,
+          "porcentaje_max": 33.99,
+          "mensaje_feedback": "<p><strong>Análisis:</strong> Tus habilidades sociales y colaborativas necesitan fortalecimiento. El trabajo en equipo es esencial para un ambiente escolar efectivo.</p><p><strong>Recomendaciones:</strong></p><ul><li>Busca <strong>mentores en tu institución</strong> para aprender dinámicas colaborativas</li><li>Participa en <strong>proyectos interdisciplinarios</strong> pequeños</li><li>Realiza <strong>cursos de resolución de conflictos</strong></li><li>Establece <strong>metas de interacción positiva</strong> con colegas</li></ul>"
+        },
+        {
+          "nombre_nivel": "En Construcción (Medio)",
+          "porcentaje_min": 34.00,
+          "porcentaje_max": 66.99,
+          "mensaje_feedback": "<p><strong>Análisis:</strong> Tienes facilidad para trabajar con otros en ciertos contextos, pero podrías mejorar tu consistencia colaborativa y habilidades de mediación.</p><p><strong>Recomendaciones:</strong></p><ul><li>Lidera pequeños <strong>grupos de trabajo</strong> para ganar confianza</li><li>Capacítate en <strong>resolución pacífica de conflictos</strong></li><li>Participa activamente en <strong>reuniones de equipo</strong></li><li>Busca retroalimentación de colegas sobre tu estilo colaborativo</li></ul>"
+        },
+        {
+          "nombre_nivel": "Fortaleza (Alto)",
+          "porcentaje_min": 67.00,
+          "porcentaje_max": 100.00,
+          "mensaje_feedback": "<p><strong>¡Excelente!</strong> Eres un <strong>colaborador ejemplar</strong> con sólidas habilidades sociales. Establecer relaciones positivas y mediar conflictos son tus fortalezas.</p><p><strong>Fortalezas identificadas:</strong></p><ul><li>✓ Colaboras efectivamente en equipos</li><li>✓ Facilitas soluciones en conflictos</li><li>✓ Generas un clima de confianza</li></ul><p><strong>Próximos pasos:</strong> Asumeproyectos de liderazgo o mentoría en tu institución.</p>"
+        }
+      ]
+    }
+  ]
+}

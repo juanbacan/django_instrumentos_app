@@ -1,0 +1,458 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+
+{% block title %}Resultados - {{ intento.instrumento.nombre }}{% endblock %}
+
+{% block meta_tags %}
+    <title>Tus Resultados: {{ intento.instrumento.nombre }} | {{ application.titulo_sitio }}</title>
+    <meta name="title" content="Tus Resultados: {{ intento.instrumento.nombre }}"/>
+    <meta name="description" content="Resultados de tu evaluación {{ intento.instrumento.nombre }} completada el {{ intento.fin|date:'d/m/Y' }}. Información confidencial."/>
+{% endblock %}
+
+{% block canonical %}
+    <meta name="robots" content="noindex, nofollow"/>
+    <link rel="canonical" href="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' intento.instrumento.slug %}">
+{% endblock %}
+
+{% block meta_social %}
+    <meta property="og:site_name" content="{{ application.titulo_sitio }}"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:url" content="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' intento.instrumento.slug %}"/>
+    <meta property="og:title" content="{{ intento.instrumento.nombre }} - Evaluación Psicométrica"/>
+    <meta property="og:description" content="{{ intento.instrumento.descripcion|default:'Realiza esta evaluación psicométrica profesional'|truncatewords:30 }}"/>
+    {% if application.social_images %}
+        <meta property="og:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+        <meta property="twitter:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image"/>
+{% endblock %}
+
+{% block content %}
+<div class="bg-background">
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert modern-alert d-flex align-items-center" role="alert">
+                    <div class="icon-wrapper me-3 flex-shrink-0">
+                        <i class="fa-solid fa-check fa-xl"></i>
+                    </div>
+                    <div>
+                        <h5 class="alert-heading mb-1 fw-bold">¡Evaluación Completada!</h5>
+                        <p class="mb-0 text-opacity-75">Has finalizado exitosamente la evaluación "{{ intento.instrumento.nombre }}"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 col-lg-8 mb-4">
+                
+                <div class="card modern-card mb-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fa-solid fa-chart-radar text-primary me-2"></i>Tus Resultados
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="chart-container" style="position: relative; height: 400px;">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card modern-card mt-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fa-solid fa-table-list text-info me-2"></i>Puntajes por Dimensión
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        {% if resultados_detalle %}
+                        <div class="table-responsive">
+                            <table class="table table-modern align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Dimensión</th>
+                                        <th class="text-center">Puntaje</th>
+                                        <th class="text-center">Porcentaje</th>
+                                        <th class="text-end">Visualización</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for dimension, detalle in resultados_detalle.items %}
+                                    <tr>
+                                        <td class="fw-semibold text-dark">{{ dimension }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 border border-primary-subtle">
+                                                {{ detalle.puntaje }} / {{ detalle.puntaje_maximo }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <strong class="text-info">{{ detalle.porcentaje|floatformat:1 }}%</strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="progress progress-modern ms-auto" style="width: 140px;">
+                                                <div class="progress-bar bg-info" role="progressbar" 
+                                                    style="width: {{ detalle.porcentaje|floatformat:0 }}%"
+                                                    aria-valuenow="{{ detalle.porcentaje|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fa-solid fa-folder-open fa-3x text-muted opacity-50"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark">Sin resultados</h6>
+                            <p class="text-muted mb-0">No se encontraron resultados detallados para esta evaluación.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- SECCIÓN DE RETROALIMENTACIÓN -->
+                {% if retroalimentaciones %}
+                <div class="card modern-card mt-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fa-solid fa-lightbulb text-warning me-2"></i>Diagnóstico y Recomendaciones
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            {% for dimension, feedback in retroalimentaciones.items %}
+                            <div class="col-12">
+                                <div class="feedback-card p-3 rounded-lg border border-start border-4 border-start-warning" style="background-color: #fffbf0;">
+                                    <div class="d-flex align-items-start mb-2">
+                                        <div class="feedback-icon me-3 flex-shrink-0" style="background-color: #ffc107; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fa-solid fa-star"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1 fw-bold text-dark">{{ dimension }}</h6>
+                                            <span class="badge bg-warning text-dark rounded-pill small">{{ feedback.nombre_nivel }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="feedback-message mt-3" style="color: #333; line-height: 1.6;">
+                                        {{ feedback.mensaje_feedback|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-12 col-lg-4">
+                
+                <div class="card modern-card mb-4 bg-light-subtle">
+                    <div class="card-body p-4">
+                        <h6 class="mb-3 fw-bold text-dark">
+                            <i class="fa-solid fa-circle-info text-primary me-2"></i>Detalles del Intento
+                        </h6>
+                        <ul class="list-unstyled mb-0 small text-secondary">
+                            <li class="mb-3 d-flex align-items-center">
+                                <div class="bg-white p-2 rounded shadow-sm me-3">
+                                    <i class="fa-solid fa-calendar text-primary"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Fecha</span>
+                                    <strong class="text-dark">{{ intento.fin|date:"d/m/Y" }}</strong>
+                                </div>
+                            </li>
+                            <li class="mb-3 d-flex align-items-center">
+                                <div class="bg-white p-2 rounded shadow-sm me-3">
+                                    <i class="fa-solid fa-clock text-info"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Hora</span>
+                                    <strong class="text-dark">{{ intento.fin|date:"H:i" }}</strong>
+                                </div>
+                            </li>
+                            <li class="mb-0 d-flex align-items-center">
+                                <div class="bg-white p-2 rounded shadow-sm me-3">
+                                    <i class="fa-solid fa-clipboard-check text-success"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Estado</span>
+                                    <span class="badge bg-success rounded-pill px-2">Completado</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card modern-card mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="mb-3 fw-bold text-dark">
+                            <i class="fa-solid fa-clipboard-question text-info me-2"></i>Evaluación
+                        </h6>
+                        <p class="mb-2 fw-semibold text-dark">{{ intento.instrumento.nombre }}</p>
+                        <p class="text-muted small mb-0 lh-lg">
+                            {{ intento.instrumento.descripcion|truncatewords:15|default:"Evaluación psicométrica" }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card modern-card">
+                    <div class="card-body p-4">
+                        <h6 class="mb-3 fw-bold text-dark">
+                            <i class="fa-solid fa-bolt text-warning me-2"></i>Acciones
+                        </h6>
+                        <div class="d-flex flex-column gap-2">
+                            <a href="{% url 'instrumentos:detalle_evaluacion' intento.instrumento.slug %}" 
+                               class="btn btn-outline-primary btn-action">
+                                <i class="fa-solid fa-arrow-rotate-right me-2"></i>Realizar Nuevamente
+                            </a>
+                            <a href="{% url 'instrumentos:lista_evaluaciones' %}" 
+                               class="btn btn-light border btn-action text-dark">
+                                <i class="fa-solid fa-list me-2 text-muted"></i>Otras Evaluaciones
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 px-3">
+                    <small class="text-muted d-block lh-sm">
+                        <i class="fa-solid fa-lock text-secondary me-1"></i>
+                        Estos resultados son confidenciales y solo tú tienes acceso a ellos.
+                    </small>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const resultadosDetalle = {{ resultados_detalle|safe }};
+        const labels = Object.keys(resultadosDetalle);
+        const data = labels.map(label => resultadosDetalle[label].porcentaje);
+
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        const radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '{{ intento.instrumento.nombre }}',
+                    data: data,
+                    backgroundColor: 'rgba(13, 110, 253, 0.15)', // Un poco más sutil
+                    borderColor: 'rgba(13, 110, 253, 0.8)',
+                    borderWidth: 2.5, // Borde un poco más grueso y moderno
+                    pointBackgroundColor: '#fff', // Puntos blancos con borde azul
+                    pointBorderColor: 'rgba(13, 110, 253, 1)',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: 'rgba(13, 110, 253, 1)',
+                    pointHoverBorderColor: '#fff',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                // 1. AÑADIMOS ESTE PADDING PARA EVITAR QUE SE CORTEN LAS LABELS
+                layout: {
+                    padding: {
+                        left: window.innerWidth < 576 ? 25 : 10,
+                        right: window.innerWidth < 576 ? 25 : 10,
+                        top: 20,
+                        bottom: 20
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            backdropColor: 'transparent',
+                            font: {
+                                size: 11,
+                                family: "'Inter', 'Segoe UI', sans-serif"
+                            },
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        pointLabels: {
+                            // 2. HACEMOS LA FUENTE DINÁMICA SEGÚN LA PANTALLA
+                            font: {
+                                size: window.innerWidth < 576 ? 10 : 12,
+                                weight: '600',
+                                family: "'Inter', 'Segoe UI', sans-serif"
+                            },
+                            color: '#495057'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.06)'
+                        },
+                        angleLines: {
+                            color: 'rgba(0, 0, 0, 0.06)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(33, 37, 41, 0.95)',
+                        padding: 12,
+                        cornerRadius: 8,
+                        titleFont: {
+                            size: 13,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                return ' Puntaje: ' + context.parsed.r.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<style>
+    /* --- TARJETAS MODERNAS --- */
+    .modern-card {
+        background: #ffffff;
+        border: none;
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .modern-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+    }
+
+    /* --- ALERTA DE ÉXITO --- */
+    .modern-alert {
+        background: #f0fdf4; /* Verde muy suave */
+        border: 1px solid #dcfce7;
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        color: #166534;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .modern-alert .icon-wrapper {
+        background: #dcfce7;
+        color: #15803d;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* --- BOTONES DE ACCIÓN --- */
+    .btn-action {
+        border-radius: 0.85rem;
+        font-weight: 600;
+        padding: 0.75rem 1.25rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-outline-primary.btn-action:hover {
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2);
+    }
+
+    /* --- TABLA MODERNA --- */
+    .table-modern {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern th {
+        color: var(--bs-secondary-color);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+        padding-bottom: 1rem;
+    }
+
+    .table-modern td {
+        padding: 1rem 0.5rem;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+        color: var(--bs-body-color);
+    }
+
+    .table-modern tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-modern tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.02);
+    }
+
+    /* --- BARRA DE PROGRESO --- */
+    .progress-modern {
+        height: 8px;
+        border-radius: 1rem;
+        background-color: var(--bs-secondary-bg);
+        overflow: hidden;
+    }
+
+    .progress-modern .progress-bar {
+        border-radius: 1rem;
+    }
+
+    /* Responsive Canvas */
+    .chart-container {
+        max-width: 100%;
+    }
+
+    /* --- FEEDBACK CARDS --- */
+    .feedback-card {
+        transition: all 0.3s ease;
+        margin-bottom: 0.5rem;
+    }
+
+    .feedback-card:hover {
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.15);
+        transform: translateX(4px);
+    }
+
+    .feedback-card .feedback-message {
+        font-size: 0.95rem;
+        color: #495057;
+    }
+
+    .feedback-card .feedback-message strong {
+        color: #333;
+        font-weight: 600;
+    }
+</style>
+{% endblock extrajs %}

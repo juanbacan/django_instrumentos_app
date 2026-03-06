@@ -1,0 +1,156 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+
+{% block title %}{{ instrumento.nombre }}{% endblock %}
+
+{% block meta_tags %}
+    <title>{{ instrumento.nombre }} - Evaluación Psicométrica | {{ application.titulo_sitio }}</title>
+    <meta name="title" content="{{ instrumento.nombre }} - Evaluación Psicométrica | {{ application.titulo_sitio }}"/>
+    <meta name="description" content="{{ instrumento.descripcion|default:'Realiza la evaluación'|truncatewords:30 }} Test psicométrico profesional de {{ total_preguntas }} preguntas sin límite de tiempo."/>
+    <meta name="keywords" content="{{ instrumento.nombre }}, test psicométrico, evaluación {{ instrumento.nombre|lower }}, orientación vocacional, test de personalidad"/>
+{% endblock %}
+
+{% block canonical %}
+    <meta name="robots" content="index, follow"/>
+    <link rel="canonical" href="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}">
+{% endblock %}
+
+{% block meta_social %}
+    <meta property="og:site_name" content="{{ application.titulo_sitio }}"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:url" content="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}"/>
+    <meta property="og:title" content="{{ instrumento.nombre }} - Evaluación Psicométrica"/>
+    <meta property="og:description" content="{{ instrumento.descripcion|default:'Realiza esta evaluación psicométrica profesional'|truncatewords:30 }}"/>
+    <meta property="og:article:section" content="Evaluaciones"/>
+    {% if application.social_images %}
+        <meta property="og:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+        <meta property="og:image:alt" content="{{ instrumento.nombre }} - Test Psicométrico"/>
+        <meta property="twitter:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:url" content="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}"/>
+    <meta name="twitter:title" content="{{ instrumento.nombre }} - Evaluación Psicométrica"/>
+    <meta name="twitter:description" content="{{ instrumento.descripcion|default:'Realiza esta evaluación psicométrica profesional'|truncatewords:30 }}"/>
+{% endblock %}
+
+{% block content %}
+<div class="bg-background">
+    <div class="container py-5">
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="{% url 'instrumentos:lista_evaluaciones' %}" class="btn btn-link text-decoration-none text-muted ps-0">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Volver a Evaluaciones
+                </a>
+            </div>
+        </div>
+
+        <div class="row gy-5">
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 p-md-5">
+                        
+                        <div class="mb-4">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2 fw-medium">
+                                <i class="fa-solid fa-circle-check me-1"></i> Disponible para realizar
+                            </span>
+                        </div>
+
+                        <h1 class="display-6 fw-bold text-dark mb-4" style="letter-spacing: -0.5px;">
+                            {{ instrumento.nombre }}
+                        </h1>
+
+                        <div class="d-flex flex-wrap gap-3 mb-5">
+                            <div class="d-flex align-items-center bg-light rounded-pill px-4 py-2 border border-light">
+                                <i class="fa-solid fa-list-ol text-primary me-2"></i>
+                                <span class="fw-medium text-dark">{{ instrumento.num_items }} preguntas</span>
+                            </div>
+                            <div class="d-flex align-items-center bg-light rounded-pill px-4 py-2 border border-light">
+                                <i class="fa-solid fa-stopwatch text-primary me-2"></i>
+                                <span class="fw-medium text-dark">Sin límite de tiempo</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <p class="lead text-muted mb-0" style="line-height: 1.8;">
+                                {{ instrumento.descripcion|default:"Esta evaluación te permitirá conocer más sobre tus características y preferencias. Los resultados te ayudarán a identificar tus fortalezas y áreas de mejora en tu perfil profesional." }}
+                            </p>
+                        </div>
+
+                        <form method="post" class="mt-auto">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill py-3 shadow-sm fw-bold" style="font-size: 1.1rem;">
+                                Comenzar Evaluación <i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4">
+                
+                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-primary bg-opacity-10">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold text-primary mb-4 text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">
+                            <i class="fa-solid fa-lightbulb me-2"></i>Tips para tu evaluación
+                        </h6>
+                        
+                        <div class="d-flex mb-3">
+                            <div class="me-3 mt-1"><i class="fa-solid fa-circle-check text-primary"></i></div>
+                            <div>
+                                <span class="d-block text-dark fw-medium mb-1">Honestidad ante todo</span>
+                                <small class="text-muted d-block">No hay respuestas correctas o incorrectas.</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex mb-3">
+                            <div class="me-3 mt-1"><i class="fa-solid fa-circle-check text-primary"></i></div>
+                            <div>
+                                <span class="d-block text-dark fw-medium mb-1">Evita interrupciones</span>
+                                <small class="text-muted d-block">Busca un ambiente tranquilo para concentrarte.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 rounded-top-4">
+                        <h6 class="fw-bold text-muted mb-0 text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">
+                            <i class="fa-solid fa-clock-rotate-left me-2"></i>Tu Historial
+                        </h6>
+                    </div>
+                    <div class="card-body pt-2 px-4 pb-4">
+                        {% if intentos_previos %}
+                            <div class="list-group list-group-flush mt-2">
+                                {% for intento_prev in intentos_previos %}
+                                <div class="list-group-item bg-transparent border-bottom px-0 py-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="d-block fw-bold text-dark mb-1">Intento #{{ intento_prev.id }}</span>
+                                        <small class="text-muted d-flex align-items-center">
+                                            <i class="fa-regular fa-calendar me-2"></i>{{ intento_prev.fin|date:"d M Y, H:i" }}
+                                        </small>
+                                    </div>
+                                    <a href="{% url 'instrumentos:ver_resultados' intento_prev.id %}" 
+                                    class="btn btn-sm btn-light text-primary rounded-circle p-2" data-bs-toggle="tooltip" title="Ver Resultados">
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <div class="bg-light rounded-circle d-inline-block p-4 mb-3">
+                                    <i class="fa-solid fa-file-signature fa-2x text-muted"></i>
+                                </div>
+                                <p class="text-muted mb-0 fw-medium">No tienes resultados previos</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
