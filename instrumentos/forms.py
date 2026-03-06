@@ -3,7 +3,7 @@ Formularios para el módulo de administración de Instrumentos/Evaluaciones.
 """
 from django import forms
 from core.forms import ModelBaseForm
-from .models import Instrumento, Dimension, Item, EscalaOpcion
+from .models import Instrumento, Dimension, Item, EscalaOpcion, NivelRetroalimentacion
 
 
 class InstrumentoForm(ModelBaseForm):
@@ -152,3 +152,46 @@ class ImportarTestForm(forms.Form):
                 raise forms.ValidationError('El archivo es demasiado grande. Máximo 5MB')
         
         return json_file
+
+
+class NivelRetroalimentacionForm(ModelBaseForm):
+    """Formulario para crear/editar Niveles de Retroalimentación"""
+    
+    class Meta:
+        model = NivelRetroalimentacion
+        fields = ['dimension', 'nombre_nivel', 'porcentaje_min', 'porcentaje_max', 'clase_visual', 'mensaje_feedback']
+        widgets = {
+            'nombre_nivel': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Bajo, Medio, Alto'
+            }),
+            'porcentaje_min': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'max': '100',
+                'step': '0.01',
+                'placeholder': '0.00'
+            }),
+            'porcentaje_max': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'max': '100',
+                'step': '0.01',
+                'placeholder': '100.00'
+            }),
+            'clase_visual': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'mensaje_feedback': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Diagnóstico y recomendaciones para este nivel...'
+            }),
+        }
+        help_texts = {
+            'nombre_nivel': 'Nombre descriptivo del nivel (Ej: Bajo, Medio, Alto)',
+            'porcentaje_min': 'Porcentaje mínimo de este rango (0 a 100)',
+            'porcentaje_max': 'Porcentaje máximo de este rango (0 a 100)',
+            'clase_visual': 'Color que representará este nivel en los resultados',
+            'mensaje_feedback': 'Mensaje con diagnóstico y recomendaciones que verá el usuario',
+        }

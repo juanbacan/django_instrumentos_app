@@ -99,6 +99,24 @@ class NivelRetroalimentacion(ModeloBase):
     mensaje_feedback = models.TextField(
         help_text="Diagnóstico y recomendaciones que verá el usuario cuando caiga en este rango"
     )
+    
+    # Opciones de clases visuales Bootstrap
+    CLASE_VISUAL_CHOICES = [
+        ('danger', 'Rojo (Peligro) - Para niveles bajos o críticos'),
+        ('warning', 'Amarillo (Advertencia) - Para niveles medios o en desarrollo'),
+        ('success', 'Verde (Éxito) - Para niveles altos o sobresalientes'),
+        ('info', 'Azul (Información) - Para niveles informativos'),
+        ('primary', 'Azul primario - Para destacar'),
+        ('secondary', 'Gris - Neutral por defecto'),
+    ]
+    
+    # Clase visual para representación de colores (opcional)
+    clase_visual = models.CharField(
+        max_length=20,
+        choices=CLASE_VISUAL_CHOICES,
+        default='secondary',
+        help_text="Color para representar visualmente este nivel de retroalimentación"
+    )
 
     class Meta:
         ordering = ['dimension', 'porcentaje_min']

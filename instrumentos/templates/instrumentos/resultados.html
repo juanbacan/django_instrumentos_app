@@ -127,20 +127,22 @@
                         <div class="row g-3">
                             {% for dimension, feedback in retroalimentaciones.items %}
                             <div class="col-12">
-                                <div class="feedback-card p-3 rounded-lg border border-start border-4 border-start-warning" style="background-color: #fffbf0;">
+                                {% with clase=feedback.clase_visual|default:'secondary' %}
+                                <div class="feedback-card p-3 rounded-lg border border-start border-4 border-start-{{ clase }}" style="background-color: {% if clase == 'danger' %}#fff5f5{% elif clase == 'warning' %}#fffbf0{% elif clase == 'success' %}#f0fdf4{% elif clase == 'info' %}#f0f9ff{% else %}#f8f9fa{% endif %};">
                                     <div class="d-flex align-items-start mb-2">
-                                        <div class="feedback-icon me-3 flex-shrink-0" style="background-color: #ffc107; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fa-solid fa-star"></i>
+                                        <div class="feedback-icon me-3 flex-shrink-0 bg-{{ clase }}-subtle text-{{ clase }} border border-{{ clase }}-subtle" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fa-solid {% if clase == 'danger' %}fa-triangle-exclamation{% elif clase == 'warning' %}fa-star-half-stroke{% elif clase == 'success' %}fa-star{% else %}fa-info-circle{% endif %}"></i>
                                         </div>
                                         <div class="flex-grow-1">
                                             <h6 class="mb-1 fw-bold text-dark">{{ dimension }}</h6>
-                                            <span class="badge bg-warning text-dark rounded-pill small">{{ feedback.nombre_nivel }}</span>
+                                            <span class="badge bg-{{ clase }}-subtle text-{{ clase }} border border-{{ clase }}-subtle rounded-pill small">{{ feedback.nombre_nivel }}</span>
                                         </div>
                                     </div>
                                     <div class="feedback-message mt-3" style="color: #333; line-height: 1.6;">
                                         {{ feedback.mensaje_feedback|safe }}
                                     </div>
                                 </div>
+                                {% endwith %}
                             </div>
                             {% endfor %}
                         </div>

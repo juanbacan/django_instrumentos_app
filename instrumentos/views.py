@@ -304,6 +304,7 @@ def ver_resultados(request, intento_id):
                 'mensaje_feedback': nivel_feedback.mensaje_feedback,
                 'porcentaje_min': float(nivel_feedback.porcentaje_min),
                 'porcentaje_max': float(nivel_feedback.porcentaje_max),
+                'clase_visual': nivel_feedback.clase_visual,
             }
     
     context = {

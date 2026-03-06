@@ -13,7 +13,7 @@ from core.views import ViewAdministracionBase, ModelCRUDView
 from core.utils import success_json, error_json, get_redirect_url
 
 from .models import Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion
-from .forms import InstrumentoForm, DimensionForm, ItemForm, EscalaOpcionForm, ImportarTestForm
+from .forms import InstrumentoForm, DimensionForm, ItemForm, EscalaOpcionForm, ImportarTestForm, NivelRetroalimentacionForm
 
 
 # ==========================================
@@ -215,7 +215,8 @@ class InstrumentoAdminView(ModelCRUDView):
                             defaults={
                                 'porcentaje_min': nivel_data['porcentaje_min'],
                                 'porcentaje_max': nivel_data['porcentaje_max'],
-                                'mensaje_feedback': nivel_data['mensaje_feedback']
+                                'mensaje_feedback': nivel_data['mensaje_feedback'],
+                                'clase_visual': nivel_data.get('clase_visual', 'secondary')
                             }
                         )
                         total_niveles += 1
@@ -232,8 +233,8 @@ class InstrumentoAdminView(ModelCRUDView):
                 )
                 
                 return success_json({
-                    'message': f'Test {action} exitosamente',
-                    'redirect_url': request.path
+                    'mensaje': f'Test {action} exitosamente',
+                    'url': request.path
                 })
                 
         except Exception as e:
@@ -313,6 +314,59 @@ class ItemAdminView(ModelCRUDView):
         """Mostrar instrumento al que pertenece"""
         return obj.dimension.instrumento.nombre
     instrumento.short_description = 'Instrumento'
+
+
+# ==========================================
+# CRUD de Niveles de Retroalimentación
+# ==========================================
+class NivelRetroalimentacionAdminView(ModelCRUDView):
+    """Vista CRUD para gestionar Niveles de Retroalimentación"""
+    model = NivelRetroalimentacion
+    form_class = NivelRetroalimentacionForm
+    template_list = 'instrumentos/admin/nivel_retroalimentacion_list.html'
+    template_form = 'core/forms/formAdmin.html'
+    
+    list_display = ['nombre_nivel', 'dimension', 'instrumento', 'rango_porcentaje', 'clase_visual_badge', 'created_at']
+    search_fields = ['nombre_nivel', 'dimension__nombre', 'dimension__instrumento__nombre', 'mensaje_feedback']
+    list_filter = ['dimension__instrumento', 'dimension', 'clase_visual', 'created_at']
+    ordering = ['dimension__instrumento', 'dimension__orden', 'porcentaje_min']
+    paginate_by = 30
+    auto_complete_fields = ['dimension']
+    
+    # Configuración de exportación
+    export_filename = 'niveles_retroalimentacion.xlsx'
+    export_headers = ['ID', 'Nivel', 'Dimensión', 'Instrumento', 'Min%', 'Max%', 'Clase Visual', 'Creado']
+    export_fields = ['id', 'nombre_nivel', 'dimension__nombre', 'instrumento', 'porcentaje_min', 'porcentaje_max', 'clase_visual', 'created_at']
+    
+    def get_queryset(self):
+        """Optimizar consultas"""
+        qs = super().get_queryset()
+        qs = qs.select_related('dimension', 'dimension__instrumento')
+        return qs
+    
+    def instrumento(self, obj):
+        """Mostrar instrumento al que pertenece"""
+        return obj.dimension.instrumento.nombre
+    instrumento.short_description = 'Instrumento'
+    
+    def rango_porcentaje(self, obj):
+        """Mostrar rango de porcentaje"""
+        return f"{obj.porcentaje_min}% - {obj.porcentaje_max}%"
+    rango_porcentaje.short_description = 'Rango'
+    
+    def clase_visual_badge(self, obj):
+        """Mostrar badge con la clase visual"""
+        colores = {
+            'danger': 'danger',
+            'warning': 'warning',
+            'success': 'success',
+            'info': 'info',
+            'primary': 'primary',
+            'secondary': 'secondary',
+        }
+        color = colores.get(obj.clase_visual, 'secondary')
+        return f'<span class="badge bg-{color}">{obj.get_clase_visual_display()}</span>'
+    clase_visual_badge.short_description = 'Color'
 
 
 # ==========================================

@@ -41,6 +41,12 @@ instrumentos_urls = (
         "namespace": 'admin_dimensiones',
     },
     {
+        "nombre": "Niveles de Retroalimentación",
+        "url": 'niveles-retroalimentacion/',
+        "vista": views_admin.NivelRetroalimentacionAdminView.as_view(),
+        "namespace": 'admin_niveles_retroalimentacion',
+    },
+    {
         "nombre": "Ítems",
         "url": 'items/',
         "vista": views_admin.ItemAdminView.as_view(),
