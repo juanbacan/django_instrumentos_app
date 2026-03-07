@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import redirect_to_login
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Max
@@ -42,10 +43,9 @@ def detalle_evaluacion(request, slug):
         # Verificar que el usuario esté logueado para iniciar la evaluación
         if not request.user.is_authenticated:
             messages.info(request, 'Debes iniciar sesión para poder realizar la evaluación.')
-            return redirect('login')
-    
-    # Verificar acceso premium (solo si está logueado)
-    if request.user.is_authenticated:
+            return redirect_to_login(request.path)
+        
+        # Verificar acceso premium
         redirect_response = check_premium_access(request.user, instrumento)
         if redirect_response:
             messages.warning(
@@ -54,8 +54,7 @@ def detalle_evaluacion(request, slug):
                 'Obtén acceso premium para poder completarlo.'
             )
             return redirect_response
-    
-    if request.method == 'POST':
+        
         # Crear un nuevo intento para este usuario
         intento = Intento.objects.create(
             usuario=request.user,
