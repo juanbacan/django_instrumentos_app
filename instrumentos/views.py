@@ -34,18 +34,26 @@ def detalle_evaluacion(request, slug):
     """
     Muestra la descripción de un instrumento específico.
     Si el usuario hace POST, crea un nuevo Intento y redirige al formulario.
+    Los usuarios no logueados pueden ver el detalle, pero deben loguearse para iniciar.
     """
     instrumento = get_object_or_404(Instrumento, slug=slug, activo=True)
     
-    # Verificar acceso premium
-    redirect_response = check_premium_access(request.user, instrumento)
-    if redirect_response:
-        messages.warning(
-            request,
-            f'El test "{instrumento.nombre}" es exclusivo para usuarios premium. '
-            'Obtén acceso premium para poder completarlo.'
-        )
-        return redirect_response
+    if request.method == 'POST':
+        # Verificar que el usuario esté logueado para iniciar la evaluación
+        if not request.user.is_authenticated:
+            messages.info(request, 'Debes iniciar sesión para poder realizar la evaluación.')
+            return redirect('login')
+    
+    # Verificar acceso premium (solo si está logueado)
+    if request.user.is_authenticated:
+        redirect_response = check_premium_access(request.user, instrumento)
+        if redirect_response:
+            messages.warning(
+                request,
+                f'El test "{instrumento.nombre}" es exclusivo para usuarios premium. '
+                'Obtén acceso premium para poder completarlo.'
+            )
+            return redirect_response
     
     if request.method == 'POST':
         # Crear un nuevo intento para este usuario
@@ -57,12 +65,14 @@ def detalle_evaluacion(request, slug):
         messages.success(request, f'Has iniciado la evaluación "{instrumento.nombre}". ¡Buena suerte!')
         return redirect('instrumentos:realizar_evaluacion', slug=slug, intento_id=intento.id)
     
-    # Obtener los últimos intentos del usuario para este instrumento
-    intentos_previos = Intento.objects.filter(
-        usuario=request.user,
-        instrumento=instrumento,
-        completado=True
-    ).order_by('-fin')[:5]
+    # Obtener los últimos intentos del usuario para este instrumento (solo si está logueado)
+    intentos_previos = []
+    if request.user.is_authenticated:
+        intentos_previos = Intento.objects.filter(
+            usuario=request.user,
+            instrumento=instrumento,
+            completado=True
+        ).order_by('-fin')[:5]
     
     context = {
         'instrumento': instrumento,
