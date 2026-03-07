@@ -512,6 +512,35 @@
             }
         }
 
+        function verificarPaginaCompleta() {
+            // Contar total de preguntas en la página
+            const totalPreguntas = document.querySelectorAll('.pregunta-card').length;
+            
+            // Contar preguntas respondidas (inputs radio que están checked)
+            const preguntasRespondidas = document.querySelectorAll('input[type="radio"][name^="item_"]:checked').length;
+            
+            // Retornar true si todas están respondidas
+            return totalPreguntas > 0 && preguntasRespondidas === totalPreguntas;
+        }
+
+        function actualizarEstadoBotones() {
+            const todasContestadas = verificarPaginaCompleta();
+            const btnSiguiente = document.querySelector('button[name="siguiente_pagina"]:not(#btnFinalizar)');
+            const btnFinalizar = document.getElementById('btnFinalizar');
+            
+            if (btnSiguiente) {
+                btnSiguiente.disabled = !todasContestadas;
+                btnSiguiente.style.opacity = todasContestadas ? '1' : '0.6';
+                btnSiguiente.style.cursor = todasContestadas ? 'pointer' : 'not-allowed';
+            }
+            
+            if (btnFinalizar) {
+                btnFinalizar.disabled = !todasContestadas;
+                btnFinalizar.style.opacity = todasContestadas ? '1' : '0.6';
+                btnFinalizar.style.cursor = todasContestadas ? 'pointer' : 'not-allowed';
+            }
+        }
+
         async function guardarRespuesta(input) {
             const itemId = input.name.replace('item_', '');
             const opcionId = input.value;
@@ -543,6 +572,7 @@
                 if (data.ok) {
                     actualizarProgressBar(data.total_respondidas, data.porcentaje_progreso);
                     cambiosSinGuardar = false;
+                    actualizarEstadoBotones();
                 }
             } catch (error) {
                 // Si falla la petición, se conserva la advertencia al salir sin guardar.
@@ -563,6 +593,10 @@
         
         if (btnFinalizar) {
             btnFinalizar.addEventListener('click', function(e) {
+                if (!verificarPaginaCompleta()) {
+                    e.preventDefault();
+                    return;
+                }
                 e.preventDefault();
                 accionInput.value = 'finalizar';
                 btnFinalizar.disabled = true;
@@ -571,7 +605,11 @@
             });
         }
 
-        form.addEventListener('submit', function() {
+        form.addEventListener('submit', function(e) {
+            if (!verificarPaginaCompleta() && !accionInput.value) {
+                e.preventDefault();
+                return;
+            }
             cambiosSinGuardar = false;
         });
 
@@ -581,6 +619,9 @@
                 e.returnValue = '';
             }
         });
+
+        // Inicializar estado de botones al cargar
+        actualizarEstadoBotones();
     });
 </script>
 {% endblock %}

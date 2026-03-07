@@ -30,7 +30,6 @@ def lista_evaluaciones(request):
 # ==========================================
 # VISTA 2: Detalle de una Evaluación
 # ==========================================
-@login_required
 def detalle_evaluacion(request, slug):
     """
     Muestra la descripción de un instrumento específico.
