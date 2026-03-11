@@ -8,7 +8,7 @@ from core.models import ModeloBase
 class Instrumento(ModeloBase):
     """Contenedor principal: p.ej. 'Dimensión 2 - Socioemocional' o 'RIASEC'"""
     nombre = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(max_length=255, unique=True)
     descripcion = models.TextField(blank=True)
     activo = models.BooleanField(default=True)
     premium = models.BooleanField(
