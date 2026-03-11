@@ -63,8 +63,8 @@ def user_has_premium_access(user, instrumento):
     
     El acceso se otorga si:
     1. El instrumento NO es premium
-    2. El usuario es staff/admin
-    3. El usuario está en la whitelist de acceso premium (si existe AccesoPremiumInstrumento)
+    2. El usuario es staff/superuser/admin
+    3. El usuario tiene el flag user.premium en True
     
     Args:
         user: Usuario a verificar
@@ -77,23 +77,14 @@ def user_has_premium_access(user, instrumento):
     if not instrumento.premium:
         return True
     
+    if not user or not user.is_authenticated:
+        return False
+
     # Staff y admin siempre tienen acceso
-    if user and (user.is_staff or user.is_admin):
+    if user.is_staff or user.is_superuser or getattr(user, 'is_admin', False):
         return True
-    
-    # Verificar si el usuario está en la whitelist
-    try:
-        from .models import AccesoPremiumInstrumento
-        if user and AccesoPremiumInstrumento.objects.filter(
-            usuario=user,
-            instrumento=instrumento,
-            activo=True
-        ).exists():
-            return True
-    except ImportError:
-        pass
-    
-    return False
+
+    return bool(getattr(user, 'premium', False))
 
 
 def check_premium_access(user, instrumento):

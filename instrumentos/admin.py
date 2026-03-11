@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion, AccesoPremiumInstrumento, AccesoPremiumInstrumento
+from .models import Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion
 
 
 class DimensionInline(admin.TabularInline):
@@ -26,15 +26,8 @@ class InstrumentoAdmin(admin.ModelAdmin):
 	list_filter = ['activo', 'premium', 'created_at']
 	search_fields = ['nombre', 'slug', 'descripcion']
 	prepopulated_fields = {'slug': ('nombre',)}
-	
-	class AccessoPremiumInline(admin.TabularInline):
-		"""Inline para accesos premium dentro de un instrumento"""
-		model = AccesoPremiumInstrumento
-		extra = 1
-		fields = ['usuario', 'activo', 'fecha_expiracion']
-		ordering = ['-created_at']
-	
-	inlines = [DimensionInline, EscalaOpcionInline, AccessoPremiumInline]
+
+	inlines = [DimensionInline, EscalaOpcionInline]
     
 	fieldsets = (
 		('Información Básica', {
@@ -232,35 +225,6 @@ class RespuestaAdmin(admin.ModelAdmin):
 	def has_delete_permission(self, request, obj=None):
 		# No permitir eliminar respuestas individuales
 		return False
-
-
-
-
-
-
-@admin.register(AccesoPremiumInstrumento)
-class AccesoPremiumInstrumentoAdmin(admin.ModelAdmin):
-	"""Administrador para Accesos Premium a Instrumentos"""
-	list_display = ['usuario', 'instrumento', 'activo', 'fecha_expiracion', 'estado_vigencia', 'created_at']
-	list_filter = ['instrumento', 'activo', 'created_at']
-	search_fields = ['usuario__username', 'usuario__email', 'instrumento__nombre']
-	ordering = ['-created_at']
-	
-	fieldsets = (
-		('Información de Acceso', {
-			'fields': ('usuario', 'instrumento')
-		}),
-		('Estado', {
-			'fields': ('activo', 'fecha_expiracion')
-		}),
-	)
-	
-	def estado_vigencia(self, obj):
-		"""Muestra si el acceso está vigente"""
-		if obj.esta_vigente:
-			return format_html('<span style="color: green;">✓ Vigente</span>')
-		return format_html('<span style="color: red;">✗ Inactivo/Expirado</span>')
-	estado_vigencia.short_description = 'Vigencia'
 
 
 @admin.register(NivelRetroalimentacion)

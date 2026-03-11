@@ -466,10 +466,12 @@ Admin → Dimensiones → Filtrar por instrumento
 Admin → Dimensiones → [Dimensión] → Tab "Niveles de retroalimentación"
 ```
 
-### Ver Accesos Premium
+### Validar si un Test es Premium
 ```
-Admin → Instrumentos → [Tu Test] → Tab "Accesos Premium"
+Admin → Instrumentos → [Tu Test] → Campo "premium"
 ```
+
+El acceso se controla por `user.premium` (campo del usuario), no por una whitelist por instrumento.
 
 ## 🔗 Enlaces Útiles
 

@@ -12,7 +12,7 @@
 - 🎯 **Evaluaciones Psicométricas Completas**: Tests con múltiples dimensiones e ítems
 - 📊 **Visualización Avanzada**: Gráficos radar interactivos con Chart.js 4.4.0
 - 🧠 **Retroalimentación Inteligente**: Diagnósticos automáticos basados en porcentajes
-- 💎 **Sistema Premium**: Control de acceso con whitelisting y fechas de expiración
+- 💎 **Sistema Premium**: Control de acceso con `user.premium` + bypass para staff/superuser
 - 📥 **Importación JSON**: Carga masiva de tests desde archivos o textarea
 - 🔄 **Auto-guardado AJAX**: Persistencia automática de respuestas
 - 📱 **Responsive Design**: Optimizado para móviles y tablets
@@ -256,20 +256,15 @@ class NivelRetroalimentacion(models.Model):
 - Si usuario obtiene 28% en "Empatía" → Muestra diagnóstico "Bajo" (0-33.99%)
 - Si obtiene 55% → Muestra diagnóstico "Medio" (34-66.99%)
 
-### 8. AccesoPremiumInstrumento 💎
-Whitelist de usuarios con acceso a tests premium.
+### 8. Control de Acceso Premium en Usuario 💎
+El acceso premium se resuelve con el campo `premium` del modelo de usuario.
 
 ```python
-class AccesoPremiumInstrumento(models.Model):
-    usuario = ForeignKey(CustomUser)
-    instrumento = ForeignKey(Instrumento)
-    activo = BooleanField(default=True)
-    fecha_expiracion = DateTimeField(null=True, blank=True)
-    
-    @property
-    def esta_vigente(self):
-        # Verifica si está activo y no ha expirado
+class CustomUser(AbstractUser):
+    premium = models.BooleanField(default=False)
 ```
+
+Si `instrumento.premium=True`, el usuario debe tener `user.premium=True` (excepto staff/superuser, que tienen bypass).
 
 ## �️ Rutas y Vistas
 
@@ -496,8 +491,8 @@ python manage.py cargar_tests_ejemplo
    - 2 dimensiones: Capacidad Empática + Habilidades Sociales
    - 8 ítems totales
    - 6 niveles de retroalimentación (3 por dimensión)
-   - Acceso: Solo usuarios con permiso + staff
-   - ⭐ Acceso premium otorgado al superusuario
+    - Acceso: Solo usuarios premium + staff
+    - ⭐ Se activa `user.premium` en el superusuario (si el campo existe)
 
 **Características:**
 - ✅ Idempotente (puedes ejecutarlo múltiples veces)
@@ -618,9 +613,9 @@ print(f"\nAccede a: http://localhost:8000/evaluaciones/")
 ### Autenticación y Autorización
 - ✅ **Todas las vistas requieren login**: `@login_required`
 - ✅ **Ownership validation**: Usuario solo ve sus propios intentos
-- ✅ **Premium access control**: Whitelist con `AccesoPremiumInstrumento`
+- ✅ **Premium access control**: `instrumento.premium` + `user.premium`
 - ✅ **Staff bypass**: Admin/staff acceden a todo
-- ✅ **Fecha de expiración**: Accesos premium con vencimiento
+- ✅ **Regla simple y trazable**: Permisos premium centralizados en el usuario
 
 ### Integridad de Datos
 - ✅ **Transacciones atómicas**: `transaction.atomic()` en operaciones críticas
@@ -826,7 +821,7 @@ Este proyecto está bajo la Licencia MIT. Ver archivo `LICENSE` para más detall
 
 ## 📊 Estadísticas del Proyecto
 
-- **Modelos**: 8 (Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion, AccesoPremiumInstrumento)
+- **Modelos**: 7 (Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion)
 - **Vistas**: 5 (Lista, Detalle, Realizar, Resultados, Importar)
 - **Templates**: 5 (incluye admin)
 - **Forms**: 1 (ImportarTestForm)

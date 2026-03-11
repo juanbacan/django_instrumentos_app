@@ -8,17 +8,16 @@ Este comando crea:
 - 2 tests de ejemplo (uno premium, uno gratis)
 - Dimensiones, items, y opciones de escala
 - Niveles de retroalimentación con diagnósticos
-- Acceso premium de ejemplo
+- Activación de premium en superusuario (si existe el campo)
 """
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from datetime import datetime, timedelta
 
 from applications.instrumentos.models import (
     Instrumento, Dimension, Item, EscalaOpcion, 
-    NivelRetroalimentacion, AccesoPremiumInstrumento
+    NivelRetroalimentacion
 )
 
 User = get_user_model()
@@ -32,18 +31,18 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             # Crear tests
-            test_gratuito = self._crear_test_gratuito()
-            test_premium = self._crear_test_premium()
+            self._crear_test_gratuito()
+            self._crear_test_premium()
 
-            # Crear acceso premium de ejemplo (si existe usuario admin)
-            self._crear_acceso_premium_ejemplo(test_premium)
+            # Activar premium en superusuario de ejemplo (si existe el campo)
+            self._activar_premium_en_superusuario()
 
         self.stdout.write(self.style.SUCCESS('\n✅ Tests de ejemplo cargados exitosamente!'))
         self.stdout.write(self.style.WARNING('\n📌 Próximos pasos:'))
         self.stdout.write('   1. Ve a Admin → Instrumentos')
         self.stdout.write('   2. Verás dos tests de ejemplo')
         self.stdout.write('   3. Prueba accediendo como usuario no-admin')
-        self.stdout.write('   4. El test "Autorregulación - Premium" requiere acceso premium')
+        self.stdout.write('   4. El test "Empatía y Relaciones Interpersonales - Premium" requiere acceso premium')
 
     def _crear_test_gratuito(self):
         """Crea un test de ejemplo gratuito"""
@@ -241,31 +240,32 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('   ✅ Test premium creado con 8 ítems, 2 dimensiones y 6 niveles de retroalimentación'))
         return instrumento
 
-    def _crear_acceso_premium_ejemplo(self, test_premium):
-        """Crea acceso premium de ejemplo"""
-        self.stdout.write('\n🔑 Creando acceso premium de ejemplo...')
+    def _activar_premium_en_superusuario(self):
+        """Activa el flag premium en el superusuario si el campo existe"""
+        self.stdout.write('\n🔑 Activando premium en superusuario de ejemplo...')
 
-        # Buscar usuario admin
         try:
             admin_user = User.objects.filter(is_superuser=True).first()
             if not admin_user:
-                self.stdout.write(self.style.WARNING('   ⚠️  No hay usuario admin. Saltando creación de acceso premium.'))
+                self.stdout.write(self.style.WARNING('   ⚠️  No hay superusuario. Saltando activación de premium.'))
                 return
 
-            # Crear acceso premium permanente para el admin
-            acceso, created = AccesoPremiumInstrumento.objects.get_or_create(
-                usuario=admin_user,
-                instrumento=test_premium,
-                defaults={
-                    'activo': True,
-                    'fecha_expiracion': None  # Permanente
-                }
-            )
+            if not hasattr(admin_user, 'premium'):
+                self.stdout.write(
+                    self.style.WARNING(
+                        '   ⚠️  El modelo de usuario no tiene campo "premium". '
+                        'Configúralo para usar control premium por usuario.'
+                    )
+                )
+                return
 
-            if created:
-                self.stdout.write(f'   ✅ Acceso premium otorgado a {admin_user.username}')
-            else:
-                self.stdout.write(f'   ℹ️  {admin_user.username} ya tiene acceso premium')
+            if admin_user.premium:
+                self.stdout.write(f'   ℹ️  {admin_user.username} ya tiene premium activo')
+                return
+
+            admin_user.premium = True
+            admin_user.save(update_fields=['premium'])
+            self.stdout.write(f'   ✅ Premium activado para {admin_user.username}')
 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'   ❌ Error al crear acceso premium: {e}'))
+            self.stdout.write(self.style.ERROR(f'   ❌ Error al activar premium en superusuario: {e}'))

@@ -24,46 +24,6 @@ class Instrumento(ModeloBase):
         return Item.objects.filter(dimension__instrumento=self).count()
 
 
-class AccesoPremiumInstrumento(ModeloBase):
-    """Registro de usuarios con acceso premium a instrumentos específicos"""
-    usuario = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='accesos_premium',
-        on_delete=models.CASCADE
-    )
-    instrumento = models.ForeignKey(
-        Instrumento,
-        related_name='accesos_usuarios',
-        on_delete=models.CASCADE
-    )
-    activo = models.BooleanField(
-        default=True,
-        help_text="Si está inactivo, el usuario pierde acceso a este test premium"
-    )
-    fecha_expiracion = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Fecha en que expira el acceso (opcional)"
-    )
-
-    class Meta:
-        unique_together = ('usuario', 'instrumento')
-        verbose_name = 'Acceso Premium a Instrumento'
-        verbose_name_plural = 'Accesos Premium a Instrumentos'
-
-    def __str__(self):
-        return f"{self.usuario.username} → {self.instrumento.nombre}"
-
-    @property
-    def esta_vigente(self):
-        """Verifica si el acceso aún es válido"""
-        if not self.activo:
-            return False
-        if self.fecha_expiracion:
-            return self.fecha_expiracion > timezone.now()
-        return True
-
-
 class Dimension(ModeloBase):
     """Categorías: p.ej. 'Empatía', 'Autorregulación', 'Realista'"""
     instrumento = models.ForeignKey(Instrumento, related_name='dimensiones', on_delete=models.CASCADE)
