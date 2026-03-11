@@ -142,7 +142,7 @@ class Item(ModeloBase):
 class EscalaOpcion(ModeloBase):
     """Opciones de respuesta: p.ej. 'Siempre' (5 pts), 'Nunca' (1 pt)"""
     instrumento = models.ForeignKey(Instrumento, related_name='opciones', on_delete=models.CASCADE)
-    etiqueta = models.CharField(max_length=50) # p.ej. "Siempre"
+    etiqueta = models.CharField(max_length=100) # p.ej. "Siempre"
     valor_nominal = models.PositiveIntegerField() # p.ej. 5
     orden = models.PositiveIntegerField(default=0)
 
