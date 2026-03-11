@@ -67,7 +67,7 @@ class AccesoPremiumInstrumento(ModeloBase):
 class Dimension(ModeloBase):
     """Categorías: p.ej. 'Empatía', 'Autorregulación', 'Realista'"""
     instrumento = models.ForeignKey(Instrumento, related_name='dimensiones', on_delete=models.CASCADE)
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=200)
     orden = models.PositiveIntegerField(default=0)
 
     def __str__(self):
@@ -81,7 +81,7 @@ class NivelRetroalimentacion(ModeloBase):
     dimension = models.ForeignKey(Dimension, related_name='niveles_retroalimentacion', on_delete=models.CASCADE)
     
     # Nombre del nivel: "Requiere Atención (Bajo)", "Adecuado (Medio)", "Óptimo (Alto)"
-    nombre_nivel = models.CharField(max_length=100, help_text="Ej: Bajo, Medio, Alto")
+    nombre_nivel = models.CharField(max_length=200, help_text="Ej: Bajo, Medio, Alto")
     
     # Rangos en porcentaje (0 a 100) para universalidad
     porcentaje_min = models.DecimalField(
@@ -142,7 +142,7 @@ class Item(ModeloBase):
 class EscalaOpcion(ModeloBase):
     """Opciones de respuesta: p.ej. 'Siempre' (5 pts), 'Nunca' (1 pt)"""
     instrumento = models.ForeignKey(Instrumento, related_name='opciones', on_delete=models.CASCADE)
-    etiqueta = models.CharField(max_length=100) # p.ej. "Siempre"
+    etiqueta = models.CharField(max_length=200) # p.ej. "Siempre"
     valor_nominal = models.PositiveIntegerField() # p.ej. 5
     orden = models.PositiveIntegerField(default=0)
 
