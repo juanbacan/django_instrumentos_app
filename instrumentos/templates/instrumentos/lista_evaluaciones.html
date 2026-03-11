@@ -64,6 +64,10 @@
                             <p class="card-text text-muted">
                                 {{ instrumento.descripcion|truncatewords:20|default:"Evaluación psicométrica disponible para ser completada." }}
                             </p>
+                            <div class="d-flex align-items-center text-muted small mt-2">
+                                <i class="fa-solid fa-list-ol me-2 text-primary"></i>
+                                <span>{{ instrumento.total_preguntas }} pregunta{{ instrumento.total_preguntas|pluralize }}</span>
+                            </div>
                         </div>
                         
                         <div class="mt-auto pt-2">

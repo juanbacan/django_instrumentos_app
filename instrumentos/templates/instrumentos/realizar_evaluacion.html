@@ -465,12 +465,12 @@
 
                                 <!-- Botón Siguiente o Finalizar -->
                                 {% if es_ultima_pagina %}
-                                    <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill" id="btnFinalizar">
+                                    <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill" id="btnFinalizar" data-requiere-completa="true">
                                         <i class="fa-solid fa-check-circle me-1"></i>Finalizar
                                     </button>
                                 {% else %}
                                     <button type="submit" name="siguiente_pagina" value="{{ pagina_obj.next_page_number }}" 
-                                            class="btn btn-nav btn-nav-next rounded-pill">
+                                            class="btn btn-nav btn-nav-next rounded-pill" id="btnSiguiente" data-requiere-completa="true">
                                         <span class="d-none d-sm-inline">Siguiente</span><span class="d-inline d-sm-none">Siguiente</span><i class="fa-solid fa-chevron-right ms-1"></i>
                                     </button>
                                 {% endif %}
@@ -525,20 +525,18 @@
 
         function actualizarEstadoBotones() {
             const todasContestadas = verificarPaginaCompleta();
-            const btnSiguiente = document.querySelector('button[name="siguiente_pagina"]:not(#btnFinalizar)');
+            const btnSiguiente = document.getElementById('btnSiguiente');
             const btnFinalizar = document.getElementById('btnFinalizar');
-            
-            if (btnSiguiente) {
-                btnSiguiente.disabled = !todasContestadas;
-                btnSiguiente.style.opacity = todasContestadas ? '1' : '0.6';
-                btnSiguiente.style.cursor = todasContestadas ? 'pointer' : 'not-allowed';
-            }
-            
-            if (btnFinalizar) {
-                btnFinalizar.disabled = !todasContestadas;
-                btnFinalizar.style.opacity = todasContestadas ? '1' : '0.6';
-                btnFinalizar.style.cursor = todasContestadas ? 'pointer' : 'not-allowed';
-            }
+
+            [btnSiguiente, btnFinalizar].forEach(function(boton) {
+                if (!boton) {
+                    return;
+                }
+
+                boton.disabled = !todasContestadas;
+                boton.style.opacity = todasContestadas ? '1' : '0.6';
+                boton.style.cursor = todasContestadas ? 'pointer' : 'not-allowed';
+            });
         }
 
         async function guardarRespuesta(input) {
@@ -606,8 +604,12 @@
         }
 
         form.addEventListener('submit', function(e) {
-            if (!verificarPaginaCompleta() && !accionInput.value) {
+            const botonSubmit = e.submitter;
+            const requierePaginaCompleta = botonSubmit && botonSubmit.dataset.requiereCompleta === 'true';
+
+            if (requierePaginaCompleta && !verificarPaginaCompleta()) {
                 e.preventDefault();
+                actualizarEstadoBotones();
                 return;
             }
             cambiosSinGuardar = false;
@@ -622,6 +624,7 @@
 
         // Inicializar estado de botones al cargar
         actualizarEstadoBotones();
+        window.addEventListener('pageshow', actualizarEstadoBotones);
     });
 </script>
 {% endblock %}

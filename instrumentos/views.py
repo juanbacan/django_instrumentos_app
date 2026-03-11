@@ -15,12 +15,16 @@ from .utils import check_premium_access
 # ==========================================
 # VISTA 1: Lista de Evaluaciones Disponibles
 # ==========================================
-@login_required
 def lista_evaluaciones(request):
     """
     Muestra todos los instrumentos activos disponibles para el usuario.
     """
-    instrumentos = Instrumento.objects.filter(activo=True).order_by('nombre')
+    instrumentos = (
+        Instrumento.objects
+        .filter(activo=True)
+        .annotate(total_preguntas=Count('dimensiones__items'))
+        .order_by('created_at', 'nombre')
+    )
     
     context = {
         'instrumentos': instrumentos,
