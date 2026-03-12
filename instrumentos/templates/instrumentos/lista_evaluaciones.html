@@ -57,16 +57,11 @@
                         <div class="mb-4">
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <h5 class="card-title mb-0 fw-bold text-dark">{{ instrumento.nombre }}</h5>
-                                <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
-                                    {% if instrumento.premium %}
-                                    <span class="badge bg-warning bg-opacity-25 text-warning-emphasis rounded-pill px-3 py-2 border border-warning border-opacity-50">
-                                        <i class="fa-solid fa-crown me-1"></i> Premium
-                                    </span>
-                                    {% endif %}
-                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 border border-success border-opacity-25">
-                                        <i class="fa-solid fa-check me-1"></i> Activo
-                                    </span>
-                                </div>
+                                {% if instrumento.premium %}
+                                <span class="badge premium-badge-mini rounded-pill">
+                                    <i class="fa-solid fa-crown me-1"></i>Premium
+                                </span>
+                                {% endif %}
                             </div>
                             <p class="card-text text-muted">
                                 {{ instrumento.descripcion|truncatewords:20|default:"Evaluación psicométrica disponible para ser completada." }}
@@ -110,6 +105,16 @@
 {% block extra_js %}
 <style>
     /* --- TARJETAS CON LA IDENTIDAD VISUAL CORRECTA --- */
+    .premium-badge-mini {
+        background: rgba(255, 193, 7, 0.2);
+        color: #8a6d00;
+        border: 1px solid rgba(255, 193, 7, 0.45);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.3rem 0.55rem;
+        white-space: nowrap;
+    }
+
     .btn-action {
         border-radius: 0.85rem;
         font-weight: 600;
