@@ -92,6 +92,7 @@ class InstrumentoAdminView(ModelCRUDView):
             <div class="alert alert-info mt-2">
                 <strong><i class="fa-solid fa-circle-info me-2"></i>Formato JSON:</strong>
                 Puedes subir un archivo o pegar el JSON en texto. Debe contener las claves <code>instrumento</code>, <code>escalas</code> y <code>dimensiones</code>.
+                <br><small class="text-muted">También puedes incluir campos opcionales como <code>instrumento.premium</code> y <code>dimensiones[].niveles_retroalimentacion</code>.</small>
                 <details class="mt-2">
                     <summary style="cursor: pointer;">Ver ejemplo</summary>
                     <pre class="mt-2 bg-light p-2 rounded small" style="max-height: 300px; overflow-y: auto;"><code>
@@ -100,7 +101,8 @@ class InstrumentoAdminView(ModelCRUDView):
         "nombre": "Test de Ejemplo",
         "slug": "test-ejemplo",
         "descripcion": "Descripción del test",
-        "activo": true
+        "activo": true,
+        "premium": false
     },
     "escalas": [
         {"etiqueta": "Nunca", "valor": 1, "orden": 1},
@@ -113,6 +115,22 @@ class InstrumentoAdminView(ModelCRUDView):
             "items": [
                 {"texto": "Pregunta 1", "es_inverso": false, "orden": 1},
                 {"texto": "Pregunta 2", "es_inverso": true, "orden": 2}
+            ],
+            "niveles_retroalimentacion": [
+                {
+                    "nombre_nivel": "Bajo",
+                    "porcentaje_min": 0,
+                    "porcentaje_max": 49.99,
+                    "mensaje_feedback": "Necesitas reforzar esta dimensión.",
+                    "clase_visual": "warning"
+                },
+                {
+                    "nombre_nivel": "Alto",
+                    "porcentaje_min": 50,
+                    "porcentaje_max": 100,
+                    "mensaje_feedback": "Buen desempeño en esta dimensión.",
+                    "clase_visual": "success"
+                }
             ]
         }
     ]
@@ -167,7 +185,8 @@ class InstrumentoAdminView(ModelCRUDView):
                     defaults={
                         'nombre': instrumento_data['nombre'],
                         'descripcion': instrumento_data.get('descripcion', ''),
-                        'activo': instrumento_data.get('activo', True)
+                        'activo': instrumento_data.get('activo', True),
+                        'premium': instrumento_data.get('premium', False)
                     }
                 )
                 
