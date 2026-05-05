@@ -11,7 +11,6 @@ from django.utils import timezone
 from .models import Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion
 from .utils import check_premium_access
 
-
 # ==========================================
 # VISTA 1: Lista de Evaluaciones Disponibles
 # ==========================================

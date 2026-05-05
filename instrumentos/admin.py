@@ -39,17 +39,20 @@ class InstrumentoAdmin(admin.ModelAdmin):
 	)
     
 	def premium_badge(self, obj):
-		"""Muestra un badge si el instrumento es premium"""
+		"""Muestra solo el icono si el instrumento es premium"""
 		if obj.premium:
-			return format_html('<span style="background-color: #FFD700; color: #333; padding: 3px 10px; border-radius: 3px;">★ Premium</span>')
-		return format_html('<span style="color: #999;">–</span>')
+			return format_html(
+				'<span style="color: #c9a227;" title="Premium" aria-label="Premium">{}</span>',
+				'★',
+			)
+		return format_html('<span style="color: #999;">{}</span>', '–')
 	premium_badge.short_description = 'Premium'
     
 	def estado_badge(self, obj):
 		"""Muestra un badge de estado activo/inactivo"""
 		if obj.activo:
-			return format_html('<span style="color: green;">●</span> Activo')
-		return format_html('<span style="color: red;">●</span> Inactivo')
+			return format_html('<span style="color: green;">{}</span> {}', '●', 'Activo')
+		return format_html('<span style="color: red;">{}</span> {}', '●', 'Inactivo')
 	estado_badge.short_description = 'Estado'
     
 	def num_dimensiones(self, obj):
@@ -169,8 +172,14 @@ class IntentoAdmin(admin.ModelAdmin):
 	def estado_badge(self, obj):
 		"""Muestra un badge del estado del intento"""
 		if obj.completado:
-			return format_html('<span style="background-color: #28a745; color: white; padding: 3px 10px; border-radius: 3px;">✓ Completado</span>')
-		return format_html('<span style="background-color: #ffc107; color: black; padding: 3px 10px; border-radius: 3px;">○ En Progreso</span>')
+			return format_html(
+				'<span style="background-color: #28a745; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
+				'✓ Completado'
+			)
+		return format_html(
+			'<span style="background-color: #ffc107; color: black; padding: 3px 10px; border-radius: 3px;">{}</span>',
+			'○ En Progreso'
+		)
 	estado_badge.short_description = 'Estado'
     
 	def num_respuestas(self, obj):
@@ -194,7 +203,7 @@ class IntentoAdmin(admin.ModelAdmin):
 					# Formato antiguo: solo número
 					html += f'<tr><td style="border: 1px solid #ddd; padding: 8px;"><strong>{dimension}</strong></td><td style="border: 1px solid #ddd; padding: 8px; text-align: center;" colspan="3">{datos}</td></tr>'
 			html += '</table>'
-			return format_html(html)
+			return format_html("{}", html)
 		return 'No hay resultados disponibles'
 	ver_resultados_json.short_description = 'Resultados Detallados'
 
