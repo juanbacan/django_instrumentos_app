@@ -22,8 +22,8 @@
     <meta property="og:title" content="Evaluaciones Psicométricas Disponibles | {{ application.titulo_sitio }}"/>
     <meta property="og:description" content="Explora nuestras evaluaciones psicométricas profesionales. Tests de orientación vocacional, personalidad y aptitudes para descubrir tu perfil profesional ideal."/>
     {% if application.social_images %}
-        <meta property="og:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
-        <meta property="twitter:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+        <meta property="og:image" content="{{ application.social_images.url|absolute_with_site:application.url_safe }}"/>
+        <meta property="twitter:image" content="{{ application.social_images.url|absolute_with_site:application.url_safe }}"/>
     {% endif %}
     <meta name="twitter:card" content="summary_large_image"/>
     <meta name="twitter:url" content="{{ application.url_safe }}{% url 'instrumentos:lista_evaluaciones' %}"/>

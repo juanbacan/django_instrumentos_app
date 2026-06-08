@@ -6,10 +6,19 @@ from django.db import transaction
 from django.db.models import Count, Max
 from django.http import Http404
 from django.http import JsonResponse
+from django.urls import reverse
 from django.utils import timezone
 
 from .models import Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion
 from .utils import check_premium_access
+
+
+def finalizar_por_tiempo_agotado(intento):
+    """Finaliza el intento si el tiempo límite expiró. Retorna True si se finalizó."""
+    if intento.completado or not intento.tiempo_agotado():
+        return False
+    intento.finalizar_test()
+    return True
 
 # ==========================================
 # VISTA 1: Lista de Evaluaciones Disponibles
@@ -115,6 +124,13 @@ def realizar_evaluacion(request, slug, intento_id):
     if intento.completado:
         messages.info(request, 'Este intento ya fue completado.')
         return redirect('instrumentos:ver_resultados', intento_id=intento.id)
+
+    if finalizar_por_tiempo_agotado(intento):
+        messages.warning(
+            request,
+            'Se agotó el tiempo límite del test. Tu evaluación se finalizó con las respuestas registradas.'
+        )
+        return redirect('instrumentos:ver_resultados', intento_id=intento.id)
     
     # Obtener opciones
     opciones = instrumento.opciones.all().order_by('orden')
@@ -147,6 +163,13 @@ def realizar_evaluacion(request, slug, intento_id):
 
     # Guardado en tiempo real (AJAX) por pregunta
     if request.method == 'POST' and request.POST.get('accion') == 'guardar_respuesta':
+        if finalizar_por_tiempo_agotado(intento):
+            return JsonResponse({
+                'ok': False,
+                'tiempo_agotado': True,
+                'redirect_url': reverse('instrumentos:ver_resultados', kwargs={'intento_id': intento.id}),
+            }, status=403)
+
         item_id = request.POST.get('item_id')
         opcion_id = request.POST.get('opcion_id')
 
@@ -179,6 +202,21 @@ def realizar_evaluacion(request, slug, intento_id):
     if request.method == 'POST':
         accion = request.POST.get('accion', 'guardar')
         siguiente_pagina = request.POST.get('siguiente_pagina')
+
+        if accion == 'finalizar_tiempo_agotado':
+            finalizar_por_tiempo_agotado(intento)
+            messages.warning(
+                request,
+                'Se agotó el tiempo límite del test. Tu evaluación se finalizó con las respuestas registradas.'
+            )
+            return redirect('instrumentos:ver_resultados', intento_id=intento.id)
+
+        if finalizar_por_tiempo_agotado(intento):
+            messages.warning(
+                request,
+                'Se agotó el tiempo límite del test. Tu evaluación se finalizó con las respuestas registradas.'
+            )
+            return redirect('instrumentos:ver_resultados', intento_id=intento.id)
 
         # Guardar respuestas de la página actual
         pagina_actual = request.POST.get('pagina', '1')
@@ -253,6 +291,8 @@ def realizar_evaluacion(request, slug, intento_id):
         'total_respondidas': total_respondidas,
         'porcentaje_progreso': round(porcentaje_progreso, 1),
         'es_ultima_pagina': not pagina_obj.has_next(),
+        'tiempo_limite_activo': instrumento.tiene_limite_tiempo,
+        'segundos_restantes': intento.segundos_restantes(),
     }
     return render(request, 'instrumentos/realizar_evaluacion.html', context)
 

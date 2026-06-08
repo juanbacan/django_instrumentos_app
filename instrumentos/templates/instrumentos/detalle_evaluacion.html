@@ -6,7 +6,7 @@
 {% block meta_tags %}
     <title>{{ instrumento.nombre }} - Evaluación Psicométrica | {{ application.titulo_sitio }}</title>
     <meta name="title" content="{{ instrumento.nombre }} - Evaluación Psicométrica | {{ application.titulo_sitio }}"/>
-    <meta name="description" content="{{ instrumento.descripcion|default:'Realiza la evaluación'|truncatewords:30 }} Test psicométrico profesional de {{ total_preguntas }} preguntas sin límite de tiempo."/>
+    <meta name="description" content="{{ instrumento.descripcion|default:'Realiza la evaluación'|truncatewords:30 }} Test psicométrico profesional de {{ instrumento.num_items }} preguntas. {{ instrumento.tiempo_limite_texto }}."/>
     <meta name="keywords" content="{{ instrumento.nombre }}, test psicométrico, evaluación {{ instrumento.nombre|lower }}, orientación vocacional, test de personalidad"/>
 {% endblock %}
 
@@ -23,9 +23,9 @@
     <meta property="og:description" content="{{ instrumento.descripcion|default:'Realiza esta evaluación psicométrica profesional'|truncatewords:30 }}"/>
     <meta property="og:article:section" content="Evaluaciones"/>
     {% if application.social_images %}
-        <meta property="og:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+        <meta property="og:image" content="{{ application.social_images.url|absolute_with_site:application.url_safe }}"/>
         <meta property="og:image:alt" content="{{ instrumento.nombre }} - Test Psicométrico"/>
-        <meta property="twitter:image" content="{{ application.url_safe }}{{ application.social_images.url }}"/>
+        <meta property="twitter:image" content="{{ application.social_images.url|absolute_with_site:application.url_safe }}"/>
     {% endif %}
     <meta name="twitter:card" content="summary_large_image"/>
     <meta name="twitter:url" content="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}"/>
@@ -67,7 +67,7 @@
                             </div>
                             <div class="d-flex align-items-center bg-light rounded-pill px-4 py-2 border border-light">
                                 <i class="fa-solid fa-stopwatch text-primary me-2"></i>
-                                <span class="fw-medium text-dark">Sin límite de tiempo</span>
+                                <span class="fw-medium text-dark">{{ instrumento.tiempo_limite_texto }}</span>
                             </div>
                         </div>
 

@@ -11,7 +11,7 @@ class InstrumentoForm(ModelBaseForm):
     
     class Meta:
         model = Instrumento
-        fields = ['nombre', 'slug', 'descripcion', 'activo', 'premium']
+        fields = ['nombre', 'slug', 'descripcion', 'activo', 'premium', 'tiempo_limite_activo', 'tiempo_limite_minutos']
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -29,11 +29,29 @@ class InstrumentoForm(ModelBaseForm):
             'activo': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
+            'tiempo_limite_activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'tiempo_limite_minutos': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'placeholder': 'Ej: 45'
+            }),
         }
         help_texts = {
             'slug': 'URL amigable del instrumento (ej: riasec, test-vocacional)',
             'activo': 'Si está activo, el instrumento estará disponible para los usuarios',
+            'tiempo_limite_activo': 'Activa un tiempo máximo para completar el test',
+            'tiempo_limite_minutos': 'Duración en minutos (solo aplica si el límite de tiempo está activo)',
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('tiempo_limite_activo') and not cleaned_data.get('tiempo_limite_minutos'):
+            raise forms.ValidationError(
+                'Debes indicar la duración en minutos cuando el límite de tiempo está activo.'
+            )
+        return cleaned_data
 
 
 class DimensionForm(ModelBaseForm):

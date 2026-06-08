@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.db import models
 from django.conf import settings
 from django.db.models import Max, Min
@@ -15,6 +17,15 @@ class Instrumento(ModeloBase):
         default=False,
         help_text="Si está marcado, solo usuarios con acceso premium podrán completar este test"
     )
+    tiempo_limite_activo = models.BooleanField(
+        default=False,
+        help_text="Si está activo, el test tendrá un tiempo máximo para completarse"
+    )
+    tiempo_limite_minutos = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Duración máxima del test en minutos (requerido si el límite de tiempo está activo)"
+    )
 
     def __str__(self):
         return self.nombre
@@ -22,6 +33,21 @@ class Instrumento(ModeloBase):
     def num_items(self):
         """Cuenta total de ítems asociados a este instrumento"""
         return Item.objects.filter(dimension__instrumento=self).count()
+
+    @property
+    def tiene_limite_tiempo(self):
+        return self.tiempo_limite_activo and bool(self.tiempo_limite_minutos)
+
+    def tiempo_limite_texto(self):
+        if not self.tiene_limite_tiempo:
+            return "Sin límite de tiempo"
+        minutos = self.tiempo_limite_minutos
+        if minutos >= 60:
+            horas, mins = divmod(minutos, 60)
+            if mins:
+                return f"{horas} h {mins} min"
+            return f"{horas} h"
+        return f"{minutos} min"
 
 
 class Dimension(ModeloBase):
@@ -129,6 +155,18 @@ class Intento(ModeloBase):
 
     def __str__(self):
         return f"{self.instrumento.nombre} - {self.usuario.username}"
+
+    def segundos_restantes(self):
+        instrumento = self.instrumento
+        if not instrumento.tiene_limite_tiempo:
+            return None
+        fin_limite = self.inicio + timedelta(minutes=instrumento.tiempo_limite_minutos)
+        restante = (fin_limite - timezone.now()).total_seconds()
+        return max(0, int(restante))
+
+    def tiempo_agotado(self):
+        restante = self.segundos_restantes()
+        return restante is not None and restante <= 0
 
     def calcular_resultados(self):
         """Calcula puntajes brutos y porcentajes por dimensión considerando ítems inversos.

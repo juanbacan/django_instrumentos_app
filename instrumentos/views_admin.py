@@ -186,7 +186,9 @@ class InstrumentoAdminView(ModelCRUDView):
                         'nombre': instrumento_data['nombre'],
                         'descripcion': instrumento_data.get('descripcion', ''),
                         'activo': instrumento_data.get('activo', True),
-                        'premium': instrumento_data.get('premium', False)
+                        'premium': instrumento_data.get('premium', False),
+                        'tiempo_limite_activo': instrumento_data.get('tiempo_limite_activo', False),
+                        'tiempo_limite_minutos': instrumento_data.get('tiempo_limite_minutos'),
                     }
                 )
                 

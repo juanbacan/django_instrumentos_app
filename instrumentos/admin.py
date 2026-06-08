@@ -36,6 +36,10 @@ class InstrumentoAdmin(admin.ModelAdmin):
 		('Estado', {
 			'fields': ('activo', 'premium')
 		}),
+		('Tiempo límite', {
+			'fields': ('tiempo_limite_activo', 'tiempo_limite_minutos'),
+			'description': 'Configura un tiempo máximo para completar el test. Si está activo, el usuario verá un contador regresivo.'
+		}),
 	)
     
 	def premium_badge(self, obj):
