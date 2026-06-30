@@ -11,7 +11,7 @@ def build_test_json(instrumento):
             Instrumento.objects
             .prefetch_related(
                 'opciones',
-                'dimensiones__items',
+                'dimensiones__items__opciones',
                 'dimensiones__niveles_retroalimentacion',
             )
             .get(pk=instrumento)
@@ -26,31 +26,53 @@ def build_test_json(instrumento):
             'premium': instrumento.premium,
             'tiempo_limite_activo': instrumento.tiempo_limite_activo,
             'tiempo_limite_minutos': instrumento.tiempo_limite_minutos,
+            'tipo_instrumento': instrumento.tipo_instrumento,
         },
-        'escalas': [
+        'dimensiones': [],
+    }
+
+    if instrumento.es_escala_likert:
+        payload['escalas'] = [
             {
                 'etiqueta': opcion.etiqueta,
                 'valor': opcion.valor_nominal,
                 'orden': opcion.orden,
             }
             for opcion in instrumento.opciones.order_by('orden', 'valor_nominal')
-        ],
-        'dimensiones': [],
-    }
+        ]
+    else:
+        payload['escalas'] = []
 
     for dimension in instrumento.dimensiones.order_by('orden', 'id'):
         dim_data = {
             'nombre': dimension.nombre,
             'orden': dimension.orden,
-            'items': [
+            'items': [],
+        }
+
+        if instrumento.es_escala_likert:
+            dim_data['items'] = [
                 {
                     'texto': item.texto,
                     'es_inverso': item.es_inverso,
                     'orden': item.orden,
                 }
                 for item in dimension.items.order_by('orden', 'id')
-            ],
-        }
+            ]
+        else:
+            for item in dimension.items.order_by('orden', 'id'):
+                dim_data['items'].append({
+                    'texto_pregunta': item.texto,
+                    'orden': item.orden,
+                    'opciones': [
+                        {
+                            'texto': opcion.texto,
+                            'valor': opcion.valor,
+                            'orden': opcion.orden,
+                        }
+                        for opcion in item.opciones.order_by('orden', 'valor')
+                    ],
+                })
 
         niveles = list(dimension.niveles_retroalimentacion.order_by('porcentaje_min', 'id'))
         if niveles:

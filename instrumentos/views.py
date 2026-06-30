@@ -9,7 +9,16 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion
+from .models import (
+    Instrumento,
+    Dimension,
+    Item,
+    ItemOpcion,
+    EscalaOpcion,
+    Intento,
+    Respuesta,
+    NivelRetroalimentacion,
+)
 from .utils import check_premium_access, get_instrumento_conversion
 
 
@@ -19,6 +28,42 @@ def finalizar_por_tiempo_agotado(intento):
         return False
     intento.finalizar_test()
     return True
+
+
+def _items_queryset(instrumento):
+    qs = Item.objects.filter(dimension__instrumento=instrumento).select_related('dimension')
+    if instrumento.es_opciones_progresivas:
+        qs = qs.prefetch_related('opciones')
+    return qs
+
+
+def _respuestas_guardadas_map(intento):
+    respuestas = {}
+    for respuesta in intento.respuestas.select_related('opcion', 'item_opcion'):
+        if respuesta.opcion_id:
+            respuestas[respuesta.item_id] = respuesta.opcion_id
+        elif respuesta.item_opcion_id:
+            respuestas[respuesta.item_id] = respuesta.item_opcion_id
+    return respuestas
+
+
+def _guardar_respuesta_item(intento, instrumento, item, opcion_seleccionada_id):
+    if instrumento.es_escala_likert:
+        opcion = EscalaOpcion.objects.get(id=opcion_seleccionada_id, instrumento=instrumento)
+        Respuesta.objects.update_or_create(
+            intento=intento,
+            item=item,
+            defaults={'opcion': opcion, 'item_opcion': None},
+        )
+        return
+
+    item_opcion = ItemOpcion.objects.get(id=opcion_seleccionada_id, item=item)
+    Respuesta.objects.update_or_create(
+        intento=intento,
+        item=item,
+        defaults={'item_opcion': item_opcion, 'opcion': None},
+    )
+
 
 # ==========================================
 # VISTA 1: Lista de Evaluaciones Disponibles
@@ -133,34 +178,33 @@ def realizar_evaluacion(request, slug, intento_id):
         )
         return redirect('instrumentos:ver_resultados', intento_id=intento.id)
     
-    # Obtener opciones
-    opciones = instrumento.opciones.all().order_by('orden')
+    # Obtener opciones globales (solo escala Likert)
+    opciones = (
+        instrumento.opciones.all().order_by('orden')
+        if instrumento.es_escala_likert
+        else EscalaOpcion.objects.none()
+    )
     
     # Generar o recuperar orden aleatorio de ítems
     if not intento.orden_items:
-        # Primera vez: aleatorizar ítems
-        items_ids = list(Item.objects.filter(
-            dimension__instrumento=instrumento
-        ).values_list('id', flat=True))
+        items_ids = list(_items_queryset(instrumento).values_list('id', flat=True))
         random.shuffle(items_ids)
         intento.orden_items = items_ids
         intento.save(update_fields=['orden_items'])
     
-    # Obtener ítems en el orden guardado
-    items_ordenados = []
-    for item_id in intento.orden_items:
-        try:
-            item = Item.objects.select_related('dimension').get(id=item_id)
-            items_ordenados.append(item)
-        except Item.DoesNotExist:
-            continue
+    items_by_id = {
+        item.id: item
+        for item in _items_queryset(instrumento).filter(id__in=intento.orden_items)
+    }
+    items_ordenados = [
+        items_by_id[item_id]
+        for item_id in intento.orden_items
+        if item_id in items_by_id
+    ]
     
     total_preguntas = len(items_ordenados)
 
-    # Obtener respuestas ya guardadas
-    respuestas_guardadas = {}
-    for respuesta in intento.respuestas.select_related('item', 'opcion'):
-        respuestas_guardadas[respuesta.item.id] = respuesta.opcion.id
+    respuestas_guardadas = _respuestas_guardadas_map(intento)
 
     # Guardado en tiempo real (AJAX) por pregunta
     if request.method == 'POST' and request.POST.get('accion') == 'guardar_respuesta':
@@ -173,21 +217,17 @@ def realizar_evaluacion(request, slug, intento_id):
 
         item_id = request.POST.get('item_id')
         opcion_id = request.POST.get('opcion_id')
+        item_opcion_id = request.POST.get('item_opcion_id')
+        opcion_seleccionada_id = item_opcion_id if instrumento.es_opciones_progresivas else opcion_id
 
-        if not item_id or not opcion_id:
+        if not item_id or not opcion_seleccionada_id:
             return JsonResponse({'ok': False, 'error': 'Datos incompletos'}, status=400)
 
         try:
             item = Item.objects.get(id=item_id, dimension__instrumento=instrumento)
-            opcion = EscalaOpcion.objects.get(id=opcion_id, instrumento=instrumento)
-        except (Item.DoesNotExist, EscalaOpcion.DoesNotExist):
+            _guardar_respuesta_item(intento, instrumento, item, opcion_seleccionada_id)
+        except (Item.DoesNotExist, EscalaOpcion.DoesNotExist, ItemOpcion.DoesNotExist):
             return JsonResponse({'ok': False, 'error': 'Ítem u opción inválida'}, status=400)
-
-        Respuesta.objects.update_or_create(
-            intento=intento,
-            item=item,
-            defaults={'opcion': opcion}
-        )
 
         total_respondidas_ajax = intento.respuestas.values('item_id').distinct().count()
         porcentaje_ajax = (total_respondidas_ajax / total_preguntas * 100) if total_preguntas > 0 else 0
@@ -224,19 +264,22 @@ def realizar_evaluacion(request, slug, intento_id):
         paginator = Paginator(items_ordenados, PREGUNTAS_POR_PAGINA)
         pagina_obj_post = paginator.get_page(pagina_actual)
 
-        opciones_validas = {
-            str(op.id): op
-            for op in instrumento.opciones.all()
-        }
+        if instrumento.es_escala_likert:
+            opciones_validas = {
+                str(op.id): op
+                for op in instrumento.opciones.all()
+            }
+        else:
+            item_ids_pagina = [item.id for item in pagina_obj_post.object_list]
+            opciones_validas = {
+                str(op.id): op
+                for op in ItemOpcion.objects.filter(item_id__in=item_ids_pagina)
+            }
 
         for item in pagina_obj_post.object_list:
             opcion_id = request.POST.get(f'item_{item.id}')
             if opcion_id and opcion_id in opciones_validas:
-                Respuesta.objects.update_or_create(
-                    intento=intento,
-                    item=item,
-                    defaults={'opcion': opciones_validas[opcion_id]}
-                )
+                _guardar_respuesta_item(intento, instrumento, item, opcion_id)
         
         # Si es finalizar, verificar que todas las preguntas estén respondidas
         if accion == 'finalizar':
@@ -264,10 +307,7 @@ def realizar_evaluacion(request, slug, intento_id):
             return redirect(f"{request.path}?pagina={siguiente_pagina}")
 
     # Refrescar respuestas luego de cualquier guardado POST
-    respuestas_guardadas = {
-        respuesta.item_id: respuesta.opcion_id
-        for respuesta in intento.respuestas.all()
-    }
+    respuestas_guardadas = _respuestas_guardadas_map(intento)
     
     # Paginación
     paginator = Paginator(items_ordenados, PREGUNTAS_POR_PAGINA)
@@ -332,10 +372,19 @@ def ver_resultados(request, intento_id):
         else:
             # Formato antiguo: fallback
             puntaje = dim_data
-            max_val = intento.instrumento.opciones.aggregate(max_val=Max('valor_nominal'))['max_val'] or 0
+            if intento.instrumento.es_opciones_progresivas:
+                max_val = 4
+            else:
+                max_val = intento.instrumento.opciones.aggregate(max_val=Max('valor_nominal'))['max_val'] or 0
             total_items = dimension.items.count()
             puntaje_maximo = total_items * max_val
-            porcentaje = (puntaje / puntaje_maximo * 100) if puntaje_maximo else 0
+            if intento.instrumento.es_opciones_progresivas and max_val:
+                min_val = 1
+                puntaje_minimo = total_items * min_val
+                rango = puntaje_maximo - puntaje_minimo
+                porcentaje = ((puntaje - puntaje_minimo) / rango * 100) if rango else 0
+            else:
+                porcentaje = (puntaje / puntaje_maximo * 100) if puntaje_maximo else 0
         
         resultados_detalle[dimension.nombre] = {
             'puntaje': puntaje,

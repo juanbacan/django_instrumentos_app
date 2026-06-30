@@ -9,6 +9,14 @@ from core.models import ModeloBase
 
 class Instrumento(ModeloBase):
     """Contenedor principal: p.ej. 'Dimensión 2 - Socioemocional' o 'RIASEC'"""
+
+    TIPO_ESCALA_LIKERT = 'escala_likert'
+    TIPO_OPCIONES_PROGRESIVAS = 'opciones_progresivas'
+    TIPO_INSTRUMENTO_CHOICES = [
+        (TIPO_ESCALA_LIKERT, 'Escala Likert (escala global)'),
+        (TIPO_OPCIONES_PROGRESIVAS, 'Opciones progresivas (por ítem)'),
+    ]
+
     nombre = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True)
     descripcion = models.TextField(blank=True)
@@ -26,9 +34,23 @@ class Instrumento(ModeloBase):
         blank=True,
         help_text="Duración máxima del test en minutos (requerido si el límite de tiempo está activo)"
     )
+    tipo_instrumento = models.CharField(
+        max_length=30,
+        choices=TIPO_INSTRUMENTO_CHOICES,
+        default=TIPO_ESCALA_LIKERT,
+        help_text="Define cómo se presentan las opciones y se calcula el puntaje",
+    )
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def es_escala_likert(self):
+        return self.tipo_instrumento == self.TIPO_ESCALA_LIKERT
+
+    @property
+    def es_opciones_progresivas(self):
+        return self.tipo_instrumento == self.TIPO_OPCIONES_PROGRESIVAS
     
     def num_items(self):
         """Cuenta total de ítems asociados a este instrumento"""
@@ -144,6 +166,21 @@ class EscalaOpcion(ModeloBase):
         return f"{self.etiqueta} ({self.valor_nominal} pts)"
 
 
+class ItemOpcion(ModeloBase):
+    """Opciones de respuesta propias de un ítem (instrumentos tipo opciones_progresivas)."""
+    item = models.ForeignKey(Item, related_name='opciones', on_delete=models.CASCADE)
+    texto = models.TextField()
+    valor = models.PositiveSmallIntegerField()
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['orden', 'valor']
+        unique_together = [('item', 'valor')]
+
+    def __str__(self):
+        return f"[Item {self.item_id}] {self.texto[:50]}... ({self.valor})"
+
+
 class Intento(ModeloBase):
     """Registro de cuando un usuario toma un test específico"""
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='intentos', on_delete=models.CASCADE)
@@ -174,67 +211,94 @@ class Intento(ModeloBase):
         return restante is not None and restante <= 0
 
     def calcular_resultados(self):
-        """Calcula puntajes brutos y porcentajes por dimensión considerando ítems inversos.
-        Devuelve un dict con puntaje_obtenido, puntaje_maximo y porcentaje para cada dimensión.
-        """
+        """Calcula puntajes brutos y porcentajes por dimensión según el tipo de instrumento."""
+        if self.instrumento.es_escala_likert:
+            return self._calcular_resultados_likert()
+        return self._calcular_resultados_progresivas()
+
+    def _formatear_resultados_dimension(self, calculo_temp, min_val, max_val):
+        """Por dimensión: máximo/mínimo y porcentaje según ítems respondidos (items_count)."""
+        resultados = {}
+        for dim_nombre, datos in calculo_temp.items():
+            puntaje_max_posible = datos['items_count'] * max_val
+            puntaje_min_posible = datos['items_count'] * min_val
+            rango_total = puntaje_max_posible - puntaje_min_posible
+            puntaje_ajustado = datos['puntaje_obtenido'] - puntaje_min_posible
+            porcentaje = (
+                (puntaje_ajustado / rango_total) * 100
+                if rango_total > 0
+                else 0
+            )
+            resultados[dim_nombre] = {
+                'dimension_id': datos['dimension_id'],
+                'puntaje_obtenido': datos['puntaje_obtenido'],
+                'puntaje_maximo': puntaje_max_posible,
+                'porcentaje': round(porcentaje, 2),
+            }
+        return resultados
+
+    def _calcular_resultados_likert(self):
+        """Likert: escala global, inversión por es_inverso, % sobre ítems respondidos."""
         respuestas = self.respuestas.select_related('item__dimension', 'opcion')
         opciones = self.instrumento.opciones.all()
-        
+
         if not opciones.exists() or not respuestas.exists():
             return {}
 
         max_val = opciones.aggregate(Max('valor_nominal'))['valor_nominal__max']
         min_val = opciones.aggregate(Min('valor_nominal'))['valor_nominal__min']
         constante_inversion = max_val + min_val
-
-        # Diccionario temporal para acumular datos
         calculo_temp = {}
 
         for r in respuestas:
+            if not r.opcion_id:
+                continue
             dim_nombre = r.item.dimension.nombre
             dim_id = r.item.dimension.id
             valor_seleccionado = r.opcion.valor_nominal
-            
             puntaje_final = (
                 constante_inversion - valor_seleccionado
                 if r.item.es_inverso
                 else valor_seleccionado
             )
-            
             if dim_nombre not in calculo_temp:
                 calculo_temp[dim_nombre] = {
                     'dimension_id': dim_id,
                     'puntaje_obtenido': 0,
-                    'items_count': 0
+                    'items_count': 0,
                 }
-            
             calculo_temp[dim_nombre]['puntaje_obtenido'] += puntaje_final
             calculo_temp[dim_nombre]['items_count'] += 1
 
-        # Formatear el JSON final con porcentajes
-        resultados = {}
-        for dim_nombre, datos in calculo_temp.items():
-            puntaje_max_posible = datos['items_count'] * max_val
-            puntaje_min_posible = datos['items_count'] * min_val
-            
-            # Fórmula de porcentaje ajustada a la escala mínima
-            rango_total = puntaje_max_posible - puntaje_min_posible
-            puntaje_ajustado = datos['puntaje_obtenido'] - puntaje_min_posible
-            
-            porcentaje = (
-                (puntaje_ajustado / rango_total) * 100
-                if rango_total > 0
-                else 0
-            )
-            
-            resultados[dim_nombre] = {
-                'dimension_id': datos['dimension_id'],
-                'puntaje_obtenido': datos['puntaje_obtenido'],
-                'puntaje_maximo': puntaje_max_posible,
-                'porcentaje': round(porcentaje, 2)
-            }
-            
-        return resultados
+        return self._formatear_resultados_dimension(calculo_temp, min_val, max_val)
+
+    def _calcular_resultados_progresivas(self):
+        """Progresivas: suma directa del valor elegido (1-4), % sobre ítems respondidos."""
+        respuestas = self.respuestas.select_related('item__dimension', 'item_opcion')
+
+        if not respuestas.exists():
+            return {}
+
+        min_val = 1
+        max_val = 4
+        calculo_temp = {}
+
+        for r in respuestas:
+            if not r.item_opcion_id:
+                continue
+            dim_nombre = r.item.dimension.nombre
+            dim_id = r.item.dimension.id
+            puntaje_final = r.item_opcion.valor
+            if dim_nombre not in calculo_temp:
+                calculo_temp[dim_nombre] = {
+                    'dimension_id': dim_id,
+                    'puntaje_obtenido': 0,
+                    'items_count': 0,
+                }
+            calculo_temp[dim_nombre]['puntaje_obtenido'] += puntaje_final
+            calculo_temp[dim_nombre]['items_count'] += 1
+
+        return self._formatear_resultados_dimension(calculo_temp, min_val, max_val)
 
     def finalizar_test(self):
         """Llama a este método cuando el usuario envíe la última pregunta"""
@@ -248,7 +312,19 @@ class Respuesta(ModeloBase):
     """La elección del usuario para cada ítem"""
     intento = models.ForeignKey(Intento, related_name='respuestas', on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    opcion = models.ForeignKey(EscalaOpcion, on_delete=models.CASCADE)
+    opcion = models.ForeignKey(
+        EscalaOpcion,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    item_opcion = models.ForeignKey(
+        ItemOpcion,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='respuestas',
+    )
 
     def __str__(self):
         return f"Respuesta de {self.intento.usuario} a Item {self.item.id}"

@@ -22,8 +22,12 @@ def _import_json_help_message(instrumento=None):
     intro = '''
         <div class="alert alert-info mt-2">
             <strong><i class="fa-solid fa-circle-info me-2"></i>Formato JSON:</strong>
-            Debe contener <code>instrumento</code>, <code>escalas</code> y <code>dimensiones</code>.
-            <br><small class="text-muted">Opcional: <code>instrumento.premium</code>, <code>tiempo_limite_*</code>, <code>niveles_retroalimentacion</code>.</small>
+            Debe contener <code>instrumento</code> y <code>dimensiones</code>.
+            <br><small class="text-muted">
+                <code>instrumento.tipo_instrumento</code>: <code>escala_likert</code> (default, requiere <code>escalas</code>)
+                o <code>opciones_progresivas</code> (4 opciones por ítem, sin escalas globales).
+                Opcional: <code>premium</code>, <code>tiempo_limite_*</code>, <code>niveles_retroalimentacion</code>.
+            </small>
     '''
     if instrumento:
         intro += f'''
