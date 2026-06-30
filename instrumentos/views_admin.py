@@ -4,16 +4,48 @@ Estas vistas extienden de ModelCRUDView para proporcionar interfaces
 de administración completas con listado, creación, edición y eliminación.
 """
 import json
-from django.shortcuts import render
-from django.db import transaction
+from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Q
 from django.contrib import messages
+from django.http import HttpResponse
 
 from core.views import ViewAdministracionBase, ModelCRUDView
 from core.utils import success_json, error_json, get_redirect_url
 
 from .models import Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion
 from .forms import InstrumentoForm, DimensionForm, ItemForm, EscalaOpcionForm, ImportarTestForm, NivelRetroalimentacionForm
+from .export_json import build_test_json
+from .import_json import ImportTestError, import_test_from_json, load_test_json_from_form
+
+
+def _import_json_help_message(instrumento=None):
+    intro = '''
+        <div class="alert alert-info mt-2">
+            <strong><i class="fa-solid fa-circle-info me-2"></i>Formato JSON:</strong>
+            Debe contener <code>instrumento</code>, <code>escalas</code> y <code>dimensiones</code>.
+            <br><small class="text-muted">Opcional: <code>instrumento.premium</code>, <code>tiempo_limite_*</code>, <code>niveles_retroalimentacion</code>.</small>
+    '''
+    if instrumento:
+        intro += f'''
+            <hr class="my-2">
+            <p class="mb-1"><strong>Test a actualizar:</strong> {instrumento.nombre}</p>
+            <p class="mb-0 small">Slug obligatorio: <code>{instrumento.slug}</code>. Se reemplazarán escalas, dimensiones, ítems y retroalimentación de este test.</p>
+        '''
+    intro += '</div>'
+    return intro
+
+
+def _success_import_message(result):
+    instrumento = result['instrumento']
+    if result['reemplazado']:
+        verb = 'actualizado'
+    else:
+        verb = 'creado' if result['created'] else 'actualizado'
+    return (
+        f'✅ Test "{instrumento.nombre}" {verb} con '
+        f'{result["total_dimensiones"]} dimensiones, {result["total_items"]} ítems '
+        f'y {result["total_niveles"]} diagnósticos.'
+    )
 
 
 # ==========================================
@@ -59,6 +91,62 @@ class InstrumentoAdminView(ModelCRUDView):
     list_filter = ['activo', 'premium', 'tiempo_limite_activo', 'created_at']
     ordering = ['-created_at']
     paginate_by = 20
+
+    row_actions = [
+        {
+            "name": "edit",
+            "label": "Editar",
+            "icon": "fa-pencil",
+            "url": lambda o: f"?action=edit&id={o.id}",
+            'attrs': {
+                'data-bs-toggle': 'tooltip',
+                'title': 'Editar',
+            },
+        },
+        {
+            "name": "ver_json",
+            "label": "Ver JSON",
+            "icon": "fa-code",
+            "url": lambda o: f"?action=ver_json&id={o.id}",
+            "modal": True,
+            'attrs': {
+                'data-bs-toggle': 'tooltip',
+                'title': 'Ver test en JSON',
+            },
+        },
+        {
+            "name": "descargar_json",
+            "label": "Descargar JSON",
+            "icon": "fa-download",
+            "url": lambda o: f"?action=descargar_json&id={o.id}",
+            'attrs': {
+                'data-bs-toggle': 'tooltip',
+                'title': 'Descargar test en JSON',
+            },
+        },
+        {
+            "name": "importar_test",
+            "label": "Importar JSON",
+            "icon": "fa-file-import",
+            "url": lambda o: f"?action=importar_test&id={o.id}",
+            "modal": True,
+            'attrs': {
+                'data-bs-toggle': 'tooltip',
+                'title': 'Actualizar este test desde JSON',
+            },
+        },
+        {
+            "name": "delete",
+            "label": "Eliminar",
+            "icon": "fa-trash",
+            "url": lambda o: f"?action=delete&id={o.id}",
+            "modal": True,
+            'attrs': {
+                'data-bs-toggle': 'tooltip',
+                'title': 'Eliminar',
+            },
+        },
+    ]
     
     # Configuración de exportación
     export_filename = 'instrumentos.xlsx'
@@ -86,184 +174,82 @@ class InstrumentoAdminView(ModelCRUDView):
         """Mostrar número total de ítems"""
         return Item.objects.filter(dimension__instrumento=obj).count()
     num_items.short_description = 'Ítems'
+
+    def get_descargar_json(self, request, context, *args, **kwargs):
+        """Descarga un instrumento completo en formato JSON (compatible con importar)."""
+        instrumento_id = request.GET.get('id') or getattr(self, 'data', {}).get('id')
+        instrumento = get_object_or_404(self.model, pk=instrumento_id)
+        payload = build_test_json(instrumento)
+        content = json.dumps(payload, ensure_ascii=False, indent=2)
+        response = HttpResponse(content, content_type='application/json; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="{instrumento.slug}.json"'
+        return response
+
+    def get_ver_json(self, request, context, *args, **kwargs):
+        """Muestra el JSON del test en un modal (sin descargar)."""
+        instrumento_id = request.GET.get('id') or getattr(self, 'data', {}).get('id')
+        instrumento = get_object_or_404(self.model, pk=instrumento_id)
+        payload = build_test_json(instrumento)
+        context.update({
+            'title': f'JSON · {instrumento.nombre}',
+            'instrumento': instrumento,
+            'json_text': json.dumps(payload, ensure_ascii=False, indent=2),
+            'descargar_url': f'{request.path}?action=descargar_json&id={instrumento.id}',
+        })
+        return render(request, 'instrumentos/admin/instrumento_json_modal.html', context)
     
+        return render(request, 'instrumentos/admin/instrumento_json_modal.html', context)
+
     def get_importar(self, request, context, *args, **kwargs):
-        """Mostrar formulario para importar test desde JSON"""
+        """Mostrar formulario para importar un test nuevo desde JSON."""
         context['title'] = 'Importar Test desde JSON'
         context['form'] = ImportarTestForm()
         context['action'] = 'importar'
-        context['message'] ='''
-            <div class="alert alert-info mt-2">
-                <strong><i class="fa-solid fa-circle-info me-2"></i>Formato JSON:</strong>
-                Puedes subir un archivo o pegar el JSON en texto. Debe contener las claves <code>instrumento</code>, <code>escalas</code> y <code>dimensiones</code>.
-                <br><small class="text-muted">También puedes incluir campos opcionales como <code>instrumento.premium</code> y <code>dimensiones[].niveles_retroalimentacion</code>.</small>
-                <details class="mt-2">
-                    <summary style="cursor: pointer;">Ver ejemplo</summary>
-                    <pre class="mt-2 bg-light p-2 rounded small" style="max-height: 300px; overflow-y: auto;"><code>
-{
-    "instrumento": {
-        "nombre": "Test de Ejemplo",
-        "slug": "test-ejemplo",
-        "descripcion": "Descripción del test",
-        "activo": true,
-        "premium": false
-    },
-    "escalas": [
-        {"etiqueta": "Nunca", "valor": 1, "orden": 1},
-        {"etiqueta": "A veces", "valor": 2, "orden": 2}
-    ],
-    "dimensiones": [
-        {
-            "nombre": "Dimensión 1",
-            "orden": 1,
-            "items": [
-                {"texto": "Pregunta 1", "es_inverso": false, "orden": 1},
-                {"texto": "Pregunta 2", "es_inverso": true, "orden": 2}
-            ],
-            "niveles_retroalimentacion": [
-                {
-                    "nombre_nivel": "Bajo",
-                    "porcentaje_min": 0,
-                    "porcentaje_max": 49.99,
-                    "mensaje_feedback": "Necesitas reforzar esta dimensión.",
-                    "clase_visual": "warning"
-                },
-                {
-                    "nombre_nivel": "Alto",
-                    "porcentaje_min": 50,
-                    "porcentaje_max": 100,
-                    "mensaje_feedback": "Buen desempeño en esta dimensión.",
-                    "clase_visual": "success"
-                }
-            ]
-        }
-    ]
-}</code></pre>
-                    </details>
-                </div>
-            '''
+        context['message'] = _import_json_help_message()
         return render(request, 'core/modals/formModal.html', context)
-    
-    def post_importar(self, request, context, *args, **kwargs):
-        """Procesar importación de test desde JSON"""
-        form = ImportarTestForm(request.POST, request.FILES)
-        
+
+    def get_importar_test(self, request, context, *args, **kwargs):
+        """Modal para actualizar un test existente mediante JSON."""
+        instrumento_id = request.GET.get('id') or getattr(self, 'data', {}).get('id')
+        instrumento = get_object_or_404(self.model, pk=instrumento_id)
+        context.update({
+            'title': f'Importar / actualizar · {instrumento.nombre}',
+            'form': ImportarTestForm(),
+            'action': 'importar_test',
+            'formid': instrumento.id,
+            'message': _import_json_help_message(instrumento),
+        })
+        return render(request, 'core/modals/formModal.html', context)
+
+    def _procesar_importacion(self, request, form, instrumento_objetivo=None):
         if not form.is_valid():
             return error_json('Formulario no válido. Por favor, revisa los campos e intenta de nuevo.', forms=[form])
-        
         try:
-            json_file = form.cleaned_data.get('json_file')
-            json_text = form.cleaned_data.get('json_text', '')
-            
-            # Leer y validar JSON
-            try:
-                if json_text:
-                    data = json.loads(json_text)
-                elif json_file:
-                    json_content = json_file.read().decode('utf-8')
-                    data = json.loads(json_content)
-                else:
-                    return error_json('Debes subir un archivo JSON o pegar el contenido JSON en la caja de texto.')
-            except json.JSONDecodeError as e:
-                return error_json(f'Error al leer el JSON: {str(e)}')
-            except UnicodeDecodeError:
-                return error_json('No se pudo decodificar el archivo. Asegúrate de usar UTF-8.')
-            except Exception as e:
-                return error_json(f'Error al procesar el JSON: {str(e)}')
-            
-            # Validar estructura JSON
-            if 'instrumento' not in data:
-                return error_json('El JSON debe contener la clave "instrumento"')
-            if 'escalas' not in data:
-                return error_json('El JSON debe contener la clave "escalas"')
-            if 'dimensiones' not in data:
-                return error_json('El JSON debe contener la clave "dimensiones"')
-            
-            # Procesar importación en transacción atómica
-            with transaction.atomic():
-                instrumento_data = data['instrumento']
-                
-                # Crear o actualizar instrumento
-                instrumento, created = Instrumento.objects.update_or_create(
-                    slug=instrumento_data['slug'],
-                    defaults={
-                        'nombre': instrumento_data['nombre'],
-                        'descripcion': instrumento_data.get('descripcion', ''),
-                        'activo': instrumento_data.get('activo', True),
-                        'premium': instrumento_data.get('premium', False),
-                        'tiempo_limite_activo': instrumento_data.get('tiempo_limite_activo', False),
-                        'tiempo_limite_minutos': instrumento_data.get('tiempo_limite_minutos'),
-                    }
-                )
-                
-                # Crear opciones de escala
-                for escala_data in data['escalas']:
-                    EscalaOpcion.objects.update_or_create(
-                        instrumento=instrumento,
-                        valor_nominal=escala_data['valor'],
-                        defaults={
-                            'etiqueta': escala_data['etiqueta'],
-                            'orden': escala_data.get('orden', escala_data['valor'])
-                        }
-                    )
-                
-                # Crear dimensiones, ítems y retroalimentación
-                total_niveles = 0  # Contador para niveles de retroalimentación
-                
-                for dimension_data in data['dimensiones']:
-                    dimension, dim_created = Dimension.objects.update_or_create(
-                        instrumento=instrumento,
-                        nombre=dimension_data['nombre'],
-                        defaults={
-                            'orden': dimension_data.get('orden', 1)
-                        }
-                    )
-                    
-                    # Crear ítems de la dimensión
-                    for item_data in dimension_data.get('items', []):
-                        Item.objects.update_or_create(
-                            dimension=dimension,
-                            texto=item_data['texto'],
-                            defaults={
-                                'es_inverso': item_data.get('es_inverso', False),
-                                'orden': item_data.get('orden', 1)
-                            }
-                        )
-                    
-                    # ==========================================
-                    # NUEVO: Crear Niveles de Retroalimentación
-                    # ==========================================
-                    for nivel_data in dimension_data.get('niveles_retroalimentacion', []):
-                        NivelRetroalimentacion.objects.update_or_create(
-                            dimension=dimension,
-                            nombre_nivel=nivel_data['nombre_nivel'],
-                            defaults={
-                                'porcentaje_min': nivel_data['porcentaje_min'],
-                                'porcentaje_max': nivel_data['porcentaje_max'],
-                                'mensaje_feedback': nivel_data['mensaje_feedback'],
-                                'clase_visual': nivel_data.get('clase_visual', 'secondary')
-                            }
-                        )
-                        total_niveles += 1
-                
-                # Mensaje de éxito actualizado
-                action = 'creado' if created else 'actualizado'
-                total_dimensiones = len(data['dimensiones'])
-                total_items = sum(len(d.get('items', [])) for d in data['dimensiones'])
-                
-                messages.success(
-                    request,
-                    f'✅ Test "{instrumento.nombre}" {action} exitosamente con '
-                    f'{total_dimensiones} dimensiones, {total_items} ítems y {total_niveles} diagnósticos.'
-                )
-                
-                return success_json({
-                    'mensaje': f'Test {action} exitosamente',
-                    'url': request.path
-                })
-                
-        except Exception as e:
-            return error_json(f'Error al importar: {str(e)}')
+            data = load_test_json_from_form(form)
+            result = import_test_from_json(data, instrumento_objetivo=instrumento_objetivo)
+            messages.success(request, _success_import_message(result))
+            return success_json({
+                'mensaje': 'Test actualizado exitosamente' if result['reemplazado'] else (
+                    'Test creado exitosamente' if result['created'] else 'Test actualizado exitosamente'
+                ),
+                'url': request.path,
+            })
+        except ImportTestError as exc:
+            return error_json(str(exc))
+        except Exception as exc:
+            return error_json(f'Error al importar: {exc}')
+
+    def post_importar(self, request, context, *args, **kwargs):
+        """Procesar importación de un test nuevo desde JSON."""
+        form = ImportarTestForm(request.POST, request.FILES)
+        return self._procesar_importacion(request, form)
+
+    def post_importar_test(self, request, context, *args, **kwargs):
+        """Procesar actualización de un test existente desde JSON."""
+        instrumento_id = request.POST.get('id') or getattr(self, 'data', {}).get('id')
+        instrumento = get_object_or_404(self.model, pk=instrumento_id)
+        form = ImportarTestForm(request.POST, request.FILES)
+        return self._procesar_importacion(request, form, instrumento_objetivo=instrumento)
 
 
 # ==========================================
