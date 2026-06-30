@@ -54,16 +54,16 @@ class InstrumentoAdminView(ModelCRUDView):
     template_list = 'instrumentos/admin/instrumento_list.html'
     template_form = 'core/forms/formAdmin.html'
     
-    list_display = ['nombre', 'slug', 'activo', 'num_dimensiones', 'num_items', 'premium', 'created_at']
+    list_display = ['nombre', 'slug', 'activo', 'tiempo_configurado', 'num_dimensiones', 'num_items', 'premium', 'created_at']
     search_fields = ['nombre', 'slug', 'descripcion']
-    list_filter = ['activo', 'premium', 'created_at']
+    list_filter = ['activo', 'premium', 'tiempo_limite_activo', 'created_at']
     ordering = ['-created_at']
     paginate_by = 20
     
     # Configuración de exportación
     export_filename = 'instrumentos.xlsx'
-    export_headers = ['ID', 'Nombre', 'Slug', 'Activo', 'Dimensiones', 'Ítems', 'Creado']
-    export_fields = ['id', 'nombre', 'slug', 'activo', 'num_dimensiones', 'num_items', 'created_at']
+    export_headers = ['ID', 'Nombre', 'Slug', 'Activo', 'Tiempo', 'Dimensiones', 'Ítems', 'Creado']
+    export_fields = ['id', 'nombre', 'slug', 'activo', lambda o: o.tiempo_limite_texto(), 'num_dimensiones', 'num_items', 'created_at']
     
     def get_queryset(self):
         """Agregar anotaciones para mejorar el rendimiento"""
@@ -77,6 +77,10 @@ class InstrumentoAdminView(ModelCRUDView):
         """Mostrar número de dimensiones"""
         return obj.dimensiones.count()
     num_dimensiones.short_description = 'Dimensiones'
+
+    def tiempo_configurado(self, obj):
+        return obj.tiempo_limite_texto()
+    tiempo_configurado.short_description = 'Tiempo'
     
     def num_items(self, obj):
         """Mostrar número total de ítems"""

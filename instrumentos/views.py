@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .models import Instrumento, Dimension, Item, EscalaOpcion, Intento, Respuesta, NivelRetroalimentacion
-from .utils import check_premium_access
+from .utils import check_premium_access, get_instrumento_conversion
 
 
 def finalizar_por_tiempo_agotado(intento):
@@ -88,6 +88,7 @@ def detalle_evaluacion(request, slug):
     context = {
         'instrumento': instrumento,
         'intentos_previos': intentos_previos,
+        'conversion': get_instrumento_conversion(instrumento, request.user, moment='detail'),
     }
     return render(request, 'instrumentos/detalle_evaluacion.html', context)
 
@@ -363,5 +364,6 @@ def ver_resultados(request, intento_id):
         'resultados': resultados,
         'resultados_detalle': resultados_detalle,
         'retroalimentaciones': retroalimentaciones,
+        'conversion': get_instrumento_conversion(intento.instrumento, request.user, moment='results'),
     }
     return render(request, 'instrumentos/resultados.html', context)

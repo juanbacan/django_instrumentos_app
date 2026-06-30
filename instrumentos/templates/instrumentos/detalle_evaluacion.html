@@ -77,6 +77,8 @@
                             </p>
                         </div>
 
+                        {% include 'instrumentos/partials/conversion_upsell.html' %}
+
                         <form method="post" class="mt-auto">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill py-3 shadow-sm fw-bold" style="font-size: 1.1rem;">

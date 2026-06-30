@@ -1,0 +1,77 @@
+{% if conversion %}
+<div class="card modern-card border-0 mb-4 conversion-upsell" style="background: linear-gradient(135deg, #fffbeb 0%, #ffffff 55%); border: 1px solid rgba(255, 193, 7, 0.35) !important;">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-start gap-3 mb-3">
+            <div class="flex-shrink-0 rounded-circle d-flex align-items-center justify-content-center bg-warning bg-opacity-25 text-warning-emphasis" style="width: 48px; height: 48px;">
+                <i class="fa-solid fa-graduation-cap fa-lg"></i>
+            </div>
+            <div>
+                <span class="badge bg-warning text-dark rounded-pill mb-2">{{ conversion.dimension_label }}</span>
+                <h6 class="fw-bold text-dark mb-1">{{ conversion.headline }}</h6>
+                <p class="text-muted small mb-0">{{ conversion.message }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-4 border p-3 mb-3">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                    <i class="fa-solid fa-list-check me-1 text-warning"></i> Test completo · {{ conversion.premium_items }} preguntas
+                </span>
+                <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                    <i class="fa-regular fa-clock me-1 text-warning"></i> {{ conversion.premium_minutes }} minutos
+                </span>
+                <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                    <i class="fa-solid fa-stopwatch me-1 text-warning"></i> Cronómetro real
+                </span>
+            </div>
+
+            {% if conversion.user_is_premium %}
+                <a href="{{ conversion.premium_test_url }}" class="btn btn-warning text-dark rounded-pill w-100 fw-bold shadow-sm">
+                    <i class="fa-solid fa-play me-1"></i> {{ conversion.premium_cta }}
+                </a>
+            {% else %}
+                <a href="{{ conversion.premium_unlock_url }}" class="btn btn-dark rounded-pill w-100 fw-bold shadow-sm mb-2">
+                    <i class="fa-solid fa-lock me-1"></i> {{ conversion.premium_unlock_cta }}
+                </a>
+                <p class="text-muted extra-small text-center mb-0">
+                    Acceso Pro incluye tests completos de Dimensión 2 y 3, simuladores de conocimientos y más.
+                </p>
+            {% endif %}
+        </div>
+
+        {% if conversion.cross_sells %}
+        <div class="mb-3">
+            <p class="small fw-bold text-dark mb-2 text-uppercase" style="letter-spacing: 0.04em;">
+                <i class="fa-solid fa-layer-group me-1 text-primary"></i> Practica las otras dimensiones INEVAL
+            </p>
+            <div class="row g-2">
+                {% for item in conversion.cross_sells %}
+                <div class="col-12">
+                    <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-between gap-2 p-3 rounded-4 border bg-white">
+                        <div>
+                            <span class="badge bg-{{ item.badge_class|default:'secondary' }}-subtle text-{{ item.badge_class|default:'secondary' }} border border-{{ item.badge_class|default:'secondary' }}-subtle rounded-pill mb-1">{{ item.badge }}</span>
+                            <p class="fw-semibold text-dark mb-0 small">{{ item.title }}</p>
+                            <p class="text-muted extra-small mb-0">{{ item.description }}</p>
+                        </div>
+                        <div class="d-flex gap-2 flex-shrink-0">
+                            <a href="{{ item.url }}" class="btn btn-sm btn-outline-primary rounded-pill fw-bold">Probar demo</a>
+                            <a href="{{ item.landing_url }}" class="btn btn-sm btn-light border rounded-pill">Ver Pro</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="text-center">
+            <a href="{{ conversion.hub_url }}" class="small text-primary fw-semibold text-decoration-none">
+                Ver todos los simuladores INEVAL <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
+<style>
+    .conversion-upsell .extra-small { font-size: 0.78rem; }
+</style>
+{% endif %}

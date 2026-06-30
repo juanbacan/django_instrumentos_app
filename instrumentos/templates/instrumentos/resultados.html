@@ -44,6 +44,12 @@
             </div>
         </div>
 
+        <div class="row mb-4 d-lg-none">
+            <div class="col-12">
+                {% include 'instrumentos/partials/conversion_upsell.html' %}
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12 col-lg-8 mb-4">
                 
@@ -152,7 +158,10 @@
             </div>
 
             <div class="col-12 col-lg-4">
-                
+                <div class="d-none d-lg-block">
+                    {% include 'instrumentos/partials/conversion_upsell.html' %}
+                </div>
+
                 <div class="card modern-card mb-4 bg-light-subtle">
                     <div class="card-body p-4">
                         <h6 class="mb-3 fw-bold text-dark">

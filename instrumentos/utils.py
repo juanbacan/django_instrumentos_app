@@ -102,3 +102,21 @@ def check_premium_access(user, instrumento):
     if not user_has_premium_access(user, instrumento):
         return redirect_to_premium()
     return None
+
+
+def get_instrumento_conversion(instrumento, user, moment='results'):
+    """Contexto opcional de upsell definido en el proyecto host (settings)."""
+    getter_path = getattr(settings, 'INSTRUMENTOS_CONVERSION_GETTER', None)
+    if not getter_path:
+        return None
+
+    try:
+        from django.utils.module_loading import import_string
+        getter = import_string(getter_path)
+        return getter(instrumento, user, moment=moment)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'INSTRUMENTOS_CONVERSION_GETTER falló (%s)', getter_path,
+        )
+        return None

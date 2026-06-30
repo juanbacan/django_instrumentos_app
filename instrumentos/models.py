@@ -39,15 +39,20 @@ class Instrumento(ModeloBase):
         return self.tiempo_limite_activo and bool(self.tiempo_limite_minutos)
 
     def tiempo_limite_texto(self):
-        if not self.tiene_limite_tiempo:
-            return "Sin límite de tiempo"
+        if not self.tiempo_limite_minutos:
+            return 'Sin límite de tiempo'
         minutos = self.tiempo_limite_minutos
         if minutos >= 60:
             horas, mins = divmod(minutos, 60)
             if mins:
-                return f"{horas} h {mins} min"
-            return f"{horas} h"
-        return f"{minutos} min"
+                texto = f'{horas} h {mins} min'
+            else:
+                texto = f'{horas} h'
+        else:
+            texto = f'{minutos} min'
+        if not self.tiempo_limite_activo:
+            return f'{texto} (inactivo)'
+        return texto
 
 
 class Dimension(ModeloBase):

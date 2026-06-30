@@ -42,15 +42,25 @@ class InstrumentoForm(ModelBaseForm):
             'slug': 'URL amigable del instrumento (ej: riasec, test-vocacional)',
             'activo': 'Si está activo, el instrumento estará disponible para los usuarios',
             'tiempo_limite_activo': 'Activa un tiempo máximo para completar el test',
-            'tiempo_limite_minutos': 'Duración en minutos (solo aplica si el límite de tiempo está activo)',
+            'tiempo_limite_minutos': 'Duración en minutos. Si indicas minutos, el límite se activa automáticamente.',
         }
 
     def clean(self):
         cleaned_data = super().clean()
+        minutos = cleaned_data.get('tiempo_limite_minutos')
+        activo = cleaned_data.get('tiempo_limite_activo')
+
+        if minutos and not activo:
+            cleaned_data['tiempo_limite_activo'] = True
+
         if cleaned_data.get('tiempo_limite_activo') and not cleaned_data.get('tiempo_limite_minutos'):
             raise forms.ValidationError(
                 'Debes indicar la duración en minutos cuando el límite de tiempo está activo.'
             )
+
+        if not cleaned_data.get('tiempo_limite_activo'):
+            cleaned_data['tiempo_limite_minutos'] = None
+
         return cleaned_data
 
 
