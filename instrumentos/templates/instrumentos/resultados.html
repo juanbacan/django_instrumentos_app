@@ -156,27 +156,19 @@
                 </div>
                 {% endif %}
 
-                {% if respuestas_mayor_puntaje %}
+                {% if detalle_respuestas %}
                 <div class="card modern-card mt-4">
                     <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
                         <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fa-solid fa-arrow-trend-up text-success me-2"></i>
-                            {% if intento.instrumento.es_opciones_progresivas %}
-                                Prácticas con mayor desarrollo
-                            {% else %}
-                                Preguntas con mayor puntaje
-                            {% endif %}
+                            <i class="fa-solid fa-list-check text-primary me-2"></i>
+                            Detalle de tus respuestas
                         </h5>
                         <p class="text-muted small mb-0 mt-2">
-                            {% if intento.instrumento.es_opciones_progresivas %}
-                                En estas situaciones indicaste el nivel más proactivo de práctica profesional.
-                            {% else %}
-                                En estas preguntas elegiste la opción con mayor puntaje de la escala.
-                            {% endif %}
+                            Por cada pregunta ves tu respuesta, su puntaje y cuál era la opción con mayor puntaje posible.
                         </p>
                     </div>
                     <div class="card-body p-4">
-                        {% for dimension, items in respuestas_mayor_puntaje.items %}
+                        {% for dimension, items in detalle_respuestas.items %}
                         <div class="mb-4 {% if not forloop.last %}pb-2 border-bottom border-light-subtle{% endif %}">
                             <h6 class="fw-bold text-dark mb-3">
                                 <i class="fa-solid fa-layer-group text-primary me-2"></i>{{ dimension }}
@@ -184,14 +176,24 @@
                             <div class="row g-3">
                                 {% for item in items %}
                                 <div class="col-12">
-                                    <div class="respuesta-alta-card p-3 rounded-lg border border-success-subtle bg-success-subtle bg-opacity-10">
+                                    <div class="respuesta-detalle-card p-3 rounded-lg border {% if item.es_mayor_puntaje %}border-success-subtle bg-success-subtle bg-opacity-10{% else %}border-light-subtle bg-light-subtle{% endif %}">
                                         <p class="fw-semibold text-dark mb-2">{{ item.pregunta }}</p>
-                                        <div class="d-flex align-items-start gap-2">
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill flex-shrink-0">
+                                        <div class="d-flex align-items-start gap-2 mb-2">
+                                            <span class="badge rounded-pill flex-shrink-0 {% if item.es_mayor_puntaje %}bg-success-subtle text-success border border-success-subtle{% else %}bg-secondary-subtle text-secondary border border-secondary-subtle{% endif %}">
                                                 {{ item.puntaje }}/{{ item.puntaje_maximo }}
                                             </span>
-                                            <p class="mb-0 text-secondary small lh-base">{{ item.respuesta }}</p>
+                                            <div class="small lh-base">
+                                                <span class="text-muted">Tu respuesta:</span>
+                                                <span class="text-dark">{{ item.respuesta }}</span>
+                                            </div>
                                         </div>
+                                        {% if item.opcion_mayor_puntaje %}
+                                        <div class="small lh-base ps-1 border-start border-2 border-success-subtle ms-1">
+                                            <span class="text-muted">Mayor puntaje:</span>
+                                            <span class="{% if item.es_mayor_puntaje %}text-success fw-medium{% else %}text-dark{% endif %}">{{ item.opcion_mayor_puntaje }}</span>
+                                            <span class="text-muted">({{ item.puntaje_maximo }}/{{ item.puntaje_maximo }})</span>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -512,13 +514,13 @@ options: {
         font-weight: 600;
     }
 
-    .respuesta-alta-card {
+    .respuesta-detalle-card {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .respuesta-alta-card:hover {
+    .respuesta-detalle-card:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
     }
 </style>
 {% endblock extrajs %}

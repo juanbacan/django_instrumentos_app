@@ -414,6 +414,7 @@ def ver_resultados(request, intento_id):
         'resultados_detalle': resultados_detalle,
         'retroalimentaciones': retroalimentaciones,
         'respuestas_mayor_puntaje': intento.obtener_respuestas_mayor_puntaje(),
+        'detalle_respuestas': intento.obtener_detalle_respuestas(),
         'conversion': get_instrumento_conversion(intento.instrumento, request.user, moment='results'),
     }
     return render(request, 'instrumentos/resultados.html', context)

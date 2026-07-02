@@ -300,10 +300,33 @@ class Intento(ModeloBase):
 
         return self._formatear_resultados_dimension(calculo_temp, min_val, max_val)
 
-    def obtener_respuestas_mayor_puntaje(self):
-        """Ítems respondidos con el puntaje máximo posible, agrupados por dimensión."""
+    def _puntaje_respuesta(self, respuesta, max_val, min_val, constante_inversion=None):
+        if self.instrumento.es_escala_likert:
+            valor = respuesta.opcion.valor_nominal
+            return (
+                constante_inversion - valor
+                if respuesta.item.es_inverso
+                else valor
+            )
+        return respuesta.item_opcion.valor
+
+    def _texto_respuesta(self, respuesta):
+        if self.instrumento.es_escala_likert:
+            return respuesta.opcion.etiqueta
+        return respuesta.item_opcion.texto
+
+    def _texto_opcion_mayor_puntaje_item(self, item, opciones_por_valor, max_val, min_val):
+        if self.instrumento.es_escala_likert:
+            valor_objetivo = min_val if item.es_inverso else max_val
+            return opciones_por_valor.get(valor_objetivo, '')
+        opcion_max = item.opciones.filter(valor=max_val).first()
+        return opcion_max.texto if opcion_max else ''
+
+    def obtener_detalle_respuestas(self):
+        """Todas las respuestas por pregunta, agrupadas por dimensión, con flag de puntaje máximo."""
         instrumento = self.instrumento
         resultado = {}
+        opciones_por_valor = {}
 
         if instrumento.es_escala_likert:
             opciones = instrumento.opciones.all()
@@ -313,6 +336,10 @@ class Intento(ModeloBase):
             max_val = opciones.aggregate(Max('valor_nominal'))['valor_nominal__max']
             min_val = opciones.aggregate(Min('valor_nominal'))['valor_nominal__min']
             constante_inversion = max_val + min_val
+            opciones_por_valor = {
+                opcion.valor_nominal: opcion.etiqueta
+                for opcion in opciones
+            }
 
             respuestas = (
                 self.respuestas
@@ -320,46 +347,45 @@ class Intento(ModeloBase):
                 .filter(opcion__isnull=False)
                 .order_by('item__dimension__orden', 'item__orden', 'item__id')
             )
-
-            for respuesta in respuestas:
-                valor = respuesta.opcion.valor_nominal
-                puntaje = (
-                    constante_inversion - valor
-                    if respuesta.item.es_inverso
-                    else valor
-                )
-                if puntaje != max_val:
-                    continue
-                dimension = respuesta.item.dimension.nombre
-                resultado.setdefault(dimension, []).append({
-                    'pregunta': respuesta.item.texto,
-                    'respuesta': respuesta.opcion.etiqueta,
-                    'puntaje': puntaje,
-                    'puntaje_maximo': max_val,
-                    'orden': respuesta.item.orden,
-                })
         else:
             max_val = 4
+            min_val = 1
+            constante_inversion = None
+
             respuestas = (
                 self.respuestas
                 .select_related('item__dimension', 'item_opcion')
+                .prefetch_related('item__opciones')
                 .filter(item_opcion__isnull=False)
                 .order_by('item__dimension__orden', 'item__orden', 'item__id')
             )
 
-            for respuesta in respuestas:
-                puntaje = respuesta.item_opcion.valor
-                if puntaje != max_val:
-                    continue
-                dimension = respuesta.item.dimension.nombre
-                resultado.setdefault(dimension, []).append({
-                    'pregunta': respuesta.item.texto,
-                    'respuesta': respuesta.item_opcion.texto,
-                    'puntaje': puntaje,
-                    'puntaje_maximo': max_val,
-                    'orden': respuesta.item.orden,
-                })
+        for respuesta in respuestas:
+            puntaje = self._puntaje_respuesta(
+                respuesta, max_val, min_val, constante_inversion
+            )
+            dimension = respuesta.item.dimension.nombre
+            resultado.setdefault(dimension, []).append({
+                'pregunta': respuesta.item.texto,
+                'respuesta': self._texto_respuesta(respuesta),
+                'opcion_mayor_puntaje': self._texto_opcion_mayor_puntaje_item(
+                    respuesta.item, opciones_por_valor, max_val, min_val
+                ),
+                'puntaje': puntaje,
+                'puntaje_maximo': max_val,
+                'es_mayor_puntaje': puntaje == max_val,
+                'orden': respuesta.item.orden,
+            })
 
+        return resultado
+
+    def obtener_respuestas_mayor_puntaje(self):
+        """Ítems respondidos con el puntaje máximo posible, agrupados por dimensión."""
+        resultado = {}
+        for dimension, items in self.obtener_detalle_respuestas().items():
+            altas = [item for item in items if item['es_mayor_puntaje']]
+            if altas:
+                resultado[dimension] = altas
         return resultado
 
     def finalizar_test(self):
