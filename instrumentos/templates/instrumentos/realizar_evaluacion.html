@@ -621,6 +621,10 @@
 {% block extrajs %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        if (typeof desbloqueoInterfaz === 'function') {
+            desbloqueoInterfaz();
+        }
+
         const form = document.getElementById('evaluacionForm');
         const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
         const progressBar = document.getElementById('progressBar');
@@ -672,6 +676,9 @@
             const pendientes = contarPreguntasSinResponder();
             if (pendientes === 0) {
                 return true;
+            }
+            if (typeof desbloqueoInterfaz === 'function') {
+                desbloqueoInterfaz();
             }
             const mensaje = pendientes === 1
                 ? 'Te falta 1 pregunta por contestar en esta página.'
@@ -759,10 +766,11 @@
 
             if (requierePaginaCompleta && !alertarPreguntasPendientes()) {
                 e.preventDefault();
+                e.stopImmediatePropagation();
                 return;
             }
             cambiosSinGuardar = false;
-        });
+        }, true);
 
         window.addEventListener('beforeunload', function(e) {
             if (cambiosSinGuardar || guardadoEnCurso > 0) {
