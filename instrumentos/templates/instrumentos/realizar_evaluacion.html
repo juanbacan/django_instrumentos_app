@@ -647,31 +647,37 @@
             }
         }
 
-        function verificarPaginaCompleta() {
-            // Contar total de preguntas en la página
-            const totalPreguntas = document.querySelectorAll('.pregunta-card').length;
-            
-            // Contar preguntas respondidas (inputs radio que están checked)
-            const preguntasRespondidas = document.querySelectorAll('input[type="radio"][name^="item_"]:checked').length;
-            
-            // Retornar true si todas están respondidas
-            return totalPreguntas > 0 && preguntasRespondidas === totalPreguntas;
+        function contarPreguntasSinResponder() {
+            const cards = document.querySelectorAll('.pregunta-card');
+            let sinResponder = 0;
+
+            for (const card of cards) {
+                const radios = card.querySelectorAll('input[type="radio"].respuesta-radio');
+                if (radios.length === 0) {
+                    sinResponder += 1;
+                    continue;
+                }
+                const grupo = radios[0].name;
+                const seleccionada = card.querySelector(
+                    `input[type="radio"].respuesta-radio[name="${grupo}"]:checked`
+                );
+                if (!seleccionada) {
+                    sinResponder += 1;
+                }
+            }
+            return sinResponder;
         }
 
-        function actualizarEstadoBotones() {
-            const todasContestadas = verificarPaginaCompleta();
-            const btnSiguiente = document.getElementById('btnSiguiente');
-            const btnFinalizar = document.getElementById('btnFinalizar');
-
-            [btnSiguiente, btnFinalizar].forEach(function(boton) {
-                if (!boton) {
-                    return;
-                }
-
-                boton.disabled = !todasContestadas;
-                boton.style.opacity = todasContestadas ? '1' : '0.6';
-                boton.style.cursor = todasContestadas ? 'pointer' : 'not-allowed';
-            });
+        function alertarPreguntasPendientes() {
+            const pendientes = contarPreguntasSinResponder();
+            if (pendientes === 0) {
+                return true;
+            }
+            const mensaje = pendientes === 1
+                ? 'Te falta 1 pregunta por contestar en esta página.'
+                : `Te faltan ${pendientes} preguntas por contestar en esta página.`;
+            alert(mensaje);
+            return false;
         }
 
         async function guardarRespuesta(input) {
@@ -715,7 +721,6 @@
                 if (data.ok) {
                     actualizarProgressBar(data.total_respondidas, data.porcentaje_progreso);
                     cambiosSinGuardar = false;
-                    actualizarEstadoBotones();
                 }
             } catch (error) {
                 // Si falla la petición, se conserva la advertencia al salir sin guardar.
@@ -736,7 +741,7 @@
         
         if (btnFinalizar) {
             btnFinalizar.addEventListener('click', function(e) {
-                if (!verificarPaginaCompleta()) {
+                if (!alertarPreguntasPendientes()) {
                     e.preventDefault();
                     return;
                 }
@@ -752,9 +757,8 @@
             const botonSubmit = e.submitter;
             const requierePaginaCompleta = botonSubmit && botonSubmit.dataset.requiereCompleta === 'true';
 
-            if (requierePaginaCompleta && !verificarPaginaCompleta()) {
+            if (requierePaginaCompleta && !alertarPreguntasPendientes()) {
                 e.preventDefault();
-                actualizarEstadoBotones();
                 return;
             }
             cambiosSinGuardar = false;
@@ -766,10 +770,6 @@
                 e.returnValue = '';
             }
         });
-
-        // Inicializar estado de botones al cargar
-        actualizarEstadoBotones();
-        window.addEventListener('pageshow', actualizarEstadoBotones);
 
         {% if tiempo_limite_activo %}
         const countdownTimer = document.getElementById('countdownTimer');
