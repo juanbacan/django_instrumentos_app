@@ -300,6 +300,68 @@ class Intento(ModeloBase):
 
         return self._formatear_resultados_dimension(calculo_temp, min_val, max_val)
 
+    def obtener_respuestas_mayor_puntaje(self):
+        """Ítems respondidos con el puntaje máximo posible, agrupados por dimensión."""
+        instrumento = self.instrumento
+        resultado = {}
+
+        if instrumento.es_escala_likert:
+            opciones = instrumento.opciones.all()
+            if not opciones.exists():
+                return resultado
+
+            max_val = opciones.aggregate(Max('valor_nominal'))['valor_nominal__max']
+            min_val = opciones.aggregate(Min('valor_nominal'))['valor_nominal__min']
+            constante_inversion = max_val + min_val
+
+            respuestas = (
+                self.respuestas
+                .select_related('item__dimension', 'opcion')
+                .filter(opcion__isnull=False)
+                .order_by('item__dimension__orden', 'item__orden', 'item__id')
+            )
+
+            for respuesta in respuestas:
+                valor = respuesta.opcion.valor_nominal
+                puntaje = (
+                    constante_inversion - valor
+                    if respuesta.item.es_inverso
+                    else valor
+                )
+                if puntaje != max_val:
+                    continue
+                dimension = respuesta.item.dimension.nombre
+                resultado.setdefault(dimension, []).append({
+                    'pregunta': respuesta.item.texto,
+                    'respuesta': respuesta.opcion.etiqueta,
+                    'puntaje': puntaje,
+                    'puntaje_maximo': max_val,
+                    'orden': respuesta.item.orden,
+                })
+        else:
+            max_val = 4
+            respuestas = (
+                self.respuestas
+                .select_related('item__dimension', 'item_opcion')
+                .filter(item_opcion__isnull=False)
+                .order_by('item__dimension__orden', 'item__orden', 'item__id')
+            )
+
+            for respuesta in respuestas:
+                puntaje = respuesta.item_opcion.valor
+                if puntaje != max_val:
+                    continue
+                dimension = respuesta.item.dimension.nombre
+                resultado.setdefault(dimension, []).append({
+                    'pregunta': respuesta.item.texto,
+                    'respuesta': respuesta.item_opcion.texto,
+                    'puntaje': puntaje,
+                    'puntaje_maximo': max_val,
+                    'orden': respuesta.item.orden,
+                })
+
+        return resultado
+
     def finalizar_test(self):
         """Llama a este método cuando el usuario envíe la última pregunta"""
         self.completado = True
