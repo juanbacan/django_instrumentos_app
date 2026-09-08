@@ -22,8 +22,8 @@ class EscalaOpcionInline(admin.TabularInline):
 @admin.register(Instrumento)
 class InstrumentoAdmin(admin.ModelAdmin):
 	"""Administrador para Instrumentos/Evaluaciones"""
-	list_display = ['nombre', 'slug', 'activo', 'premium_badge', 'estado_badge', 'num_dimensiones', 'num_items', 'created_at']
-	list_filter = ['activo', 'premium', 'created_at']
+	list_display = ['nombre', 'slug', 'activo', 'premium_badge', 'modo_visualizacion', 'estado_badge', 'num_dimensiones', 'num_items', 'created_at']
+	list_filter = ['activo', 'premium', 'modo_visualizacion', 'created_at']
 	search_fields = ['nombre', 'slug', 'descripcion']
 	prepopulated_fields = {'slug': ('nombre',)}
 
@@ -35,6 +35,10 @@ class InstrumentoAdmin(admin.ModelAdmin):
 		}),
 		('Estado', {
 			'fields': ('activo', 'premium')
+		}),
+		('Presentación', {
+			'fields': ('tipo_instrumento', 'modo_visualizacion'),
+			'description': 'El modo paginado muestra varias preguntas por página. El modo simulador muestra una pregunta a la vez con un listado lateral de números.'
 		}),
 		('Tiempo límite', {
 			'fields': ('tiempo_limite_activo', 'tiempo_limite_minutos'),

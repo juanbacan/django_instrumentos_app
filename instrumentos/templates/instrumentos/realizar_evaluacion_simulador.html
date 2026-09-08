@@ -1,0 +1,610 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+{% load core_extras %}
+{% load l10n %}
+
+{% block title %}{{ instrumento.nombre }} - Evaluación{% endblock %}
+
+{% block meta_tags %}
+    <title>Realizando: {{ instrumento.nombre }} | {{ application.titulo_sitio }}</title>
+    <meta name="title" content="Realizando: {{ instrumento.nombre }}"/>
+    <meta name="description" content="Estás realizando la evaluación {{ instrumento.nombre }}. Pregunta 1 de {{ total_preguntas }}."/>
+{% endblock %}
+
+{% block canonical %}
+    <meta name="robots" content="noindex, nofollow"/>
+    <link rel="canonical" href="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}">
+{% endblock %}
+
+{% block meta_social %}
+    <meta property="og:site_name" content="{{ application.titulo_sitio }}"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:url" content="{{ application.url_safe }}{% url 'instrumentos:detalle_evaluacion' instrumento.slug %}"/>
+    <meta property="og:title" content="{{ instrumento.nombre }} - Evaluación Psicométrica"/>
+    <meta property="og:description" content="{{ instrumento.descripcion|default:'Realiza esta evaluación psicométrica profesional'|truncatewords:30 }}"/>
+    {% if application.social_images %}
+        <meta property="og:image" content="{{ application.social_images.url|absolute_with_site:application.url_safe }}"/>
+        <meta property="twitter:image" content="{{ application.social_images.url|absolute_with_site:application.url_safe }}"/>
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image"/>
+{% endblock %}
+
+{% block extracss %}
+{% include 'instrumentos/partials/realizar_evaluacion_css.html' %}
+<style>
+    .ocultar-pregunta {
+        display: none !important;
+    }
+
+    .pregunta-card-simulador {
+        min-height: 320px;
+    }
+
+    .pregunta-card-simulador:hover {
+        transform: none;
+    }
+
+    .simulador-sidebar-card {
+        background: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        border: 1px solid var(--bs-border-color-translucent);
+        padding: 1rem 0.85rem 1.15rem;
+    }
+
+    @media (min-width: 768px) {
+        .simulador-sidebar-card {
+            position: sticky;
+            top: 6.5rem;
+            max-height: calc(100vh - 8rem);
+            overflow: auto;
+        }
+    }
+
+    .boton-simulador {
+        color: #6c757d;
+        width: 2.45rem;
+        height: 2.45rem;
+        border: 2px solid #e9ecef;
+        margin: 0.15rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+        text-align: center;
+        transition: all 0.2s ease-in-out;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .boton-simulador:hover {
+        transform: translateY(-1px);
+        border-color: var(--bs-primary);
+        color: var(--bs-primary);
+    }
+
+    .boton-contestada {
+        color: white !important;
+        background: linear-gradient(145deg, #28a745, #1e7e34) !important;
+        border-color: #28a745 !important;
+    }
+
+    .boton-seleccionado {
+        color: white !important;
+        background: linear-gradient(145deg, var(--bs-primary), #0056b3) !important;
+        border-color: var(--bs-primary) !important;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3) !important;
+    }
+
+    .btn-nav-finalizar.is-last {
+        box-shadow: 0 6px 20px rgba(5, 150, 105, 0.35);
+    }
+
+    .pregunta-kicker {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--bs-primary);
+    }
+
+    .pregunta-kicker span {
+        color: var(--bs-secondary-color);
+        font-weight: 500;
+    }
+
+    #mobile-nav-button .btn {
+        position: fixed;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        width: 56px;
+        height: 56px;
+        z-index: 1040;
+        border: 3px solid white;
+    }
+
+    @media (min-width: 768px) {
+        .navigation-fixed {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="progress-fixed">
+    <div class="container-xl">
+        <div class="row align-items-center mb-2">
+            <div class="col-md-8">
+                <h5 class="mb-0">{{ instrumento.nombre }}</h5>
+                <small class="text-muted">
+                    Pregunta <span id="preguntaActualLabel">1</span> de {{ total_preguntas }}
+                </small>
+            </div>
+            <div class="col-md-4 text-end">
+                {% if tiempo_limite_activo %}
+                <div class="countdown-timer mb-1" id="countdownTimer" data-segundos="{{ segundos_restantes }}">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                    <span id="countdownDisplay">--:--</span>
+                </div>
+                {% endif %}
+                <strong class="text-primary" id="totalRespondidas">{{ total_respondidas }}</strong> / {{ total_preguntas }} preguntas
+            </div>
+        </div>
+        <div class="progress" style="height: 12px;">
+            <div id="progressBar" class="progress-bar {% if porcentaje_progreso < 50 %}bg-warning{% elif porcentaje_progreso < 100 %}bg-info{% else %}bg-success{% endif %}"
+                 role="progressbar"
+                 style="width: {{ porcentaje_progreso|floatformat:0|unlocalize }}%"
+                 aria-valuenow="{{ porcentaje_progreso|floatformat:2|unlocalize }}"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+                {{ porcentaje_progreso|floatformat:0 }}%
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-md-none" id="mobile-nav-button">
+    <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#sidebarNav"
+            aria-controls="sidebarNav">
+        <i class="fa-solid fa-list-ol fs-5"></i>
+    </button>
+</div>
+
+<div class="bg-background">
+    <form method="post" id="evaluacionForm">
+        <div class="container-xl py-4">
+            {% csrf_token %}
+            <input type="hidden" name="accion" id="accionInput" value="guardar">
+            <input type="hidden" id="tipoInstrumento" value="{{ instrumento.tipo_instrumento }}">
+            <input type="hidden" id="itemInicialId" value="{{ item_inicial_id }}">
+
+            <div class="row gy-4">
+                <div class="col-12 col-md-4">
+                    <div class="d-md-block offcanvas-md offcanvas-start" tabindex="-1" id="sidebarNav" aria-labelledby="sidebarNavLabel">
+                        <div class="offcanvas-header bg-primary text-white d-md-none">
+                            <h5 class="offcanvas-title d-flex align-items-center gap-2" id="sidebarNavLabel">
+                                <i class="fa-solid fa-list-ol"></i>
+                                Navegación de preguntas
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarNav" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="offcanvas-body p-0">
+                            <div class="simulador-sidebar-card">
+                                <div class="d-none d-md-block text-center mb-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle mb-2" style="width: 40px; height: 40px;">
+                                        <i class="fa-solid fa-list-ol text-primary"></i>
+                                    </div>
+                                    <h6 class="mb-0 fw-bold text-primary">Navegación de preguntas</h6>
+                                </div>
+                                <div class="d-flex flex-wrap justify-content-center align-items-center">
+                                    {% for item in items %}
+                                        <button
+                                            type="button"
+                                            class="boton-simulador {% if respuestas_guardadas|get_item:item.id %}boton-contestada{% endif %} {% if item.id == item_inicial_id %}boton-seleccionado{% endif %}"
+                                            id="boton-{{ item.id }}"
+                                            data-item-id="{{ item.id }}"
+                                            title="Pregunta {{ item.numero_pregunta }}">
+                                            {{ item.numero_pregunta }}
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-3 pt-3 border-top">
+                                    <small class="text-muted">
+                                        <i class="fa-solid fa-info-circle me-1"></i>
+                                        Haz clic en un número para navegar
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-8">
+                    {% for item in items %}
+                        <article
+                            id="pregunta-{{ item.id }}"
+                            class="pregunta-card pregunta-card-simulador {% if item.id != item_inicial_id %}ocultar-pregunta{% endif %}"
+                            data-item-id="{{ item.id }}"
+                            data-numero="{{ item.numero_pregunta }}">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h2 class="pregunta-kicker mb-0">
+                                    Pregunta {{ item.numero_pregunta }} <span>de {{ total_preguntas }}</span>
+                                </h2>
+                            </div>
+                            <div class="d-flex align-items-start">
+                                <div class="pregunta-badge me-3">{{ item.numero_pregunta }}</div>
+                                <div class="flex-grow-1">
+                                    <h5 class="pregunta-texto">{{ item.texto }}</h5>
+                                </div>
+                            </div>
+                            {% include 'instrumentos/partials/pregunta_opciones.html' with pregunta_numero=item.numero_pregunta %}
+
+                            <div class="d-flex justify-content-between align-items-center gap-2 mt-4 pt-3 border-top d-none d-md-flex">
+                                <button type="button" class="btn btn-nav btn-nav-back rounded-pill btn-pregunta-anterior">
+                                    <i class="fa-solid fa-chevron-left me-1"></i>Anterior
+                                </button>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-nav btn-nav-next rounded-pill btn-pregunta-siguiente">
+                                        Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
+                                    </button>
+                                    <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill btn-finalizar-simulador" data-requiere-completa="true">
+                                        <i class="fa-solid fa-check-circle me-1"></i>Finalizar
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation-fixed d-md-none">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center nav-controls gap-2">
+                    <button type="button" class="btn btn-nav btn-nav-back rounded-pill btn-pregunta-anterior">
+                        <i class="fa-solid fa-chevron-left me-1"></i>Atrás
+                    </button>
+                    <button type="button" class="btn btn-nav btn-nav-next rounded-pill btn-pregunta-siguiente">
+                        Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
+                    </button>
+                    <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill btn-finalizar-simulador" data-requiere-completa="true">
+                        <i class="fa-solid fa-check-circle me-1"></i>Finalizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof desbloqueoInterfaz === 'function') {
+            desbloqueoInterfaz();
+        }
+
+        const form = document.getElementById('evaluacionForm');
+        const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const progressBar = document.getElementById('progressBar');
+        const totalRespondidasEl = document.getElementById('totalRespondidas');
+        const esOpcionesProgresivas = document.getElementById('tipoInstrumento')?.value === 'opciones_progresivas';
+        const preguntaActualLabel = document.getElementById('preguntaActualLabel');
+        const botones = Array.from(document.querySelectorAll('.boton-simulador'));
+        const preguntas = Array.from(document.querySelectorAll('.pregunta-card-simulador'));
+        const itemInicialId = document.getElementById('itemInicialId')?.value;
+
+        let cambiosSinGuardar = false;
+        let guardadoEnCurso = 0;
+
+        function actualizarProgressBar(totalRespondidas, porcentaje) {
+            const porcentajeSeguro = Math.max(0, Math.min(100, Number(porcentaje) || 0));
+            progressBar.style.width = `${porcentajeSeguro}%`;
+            progressBar.setAttribute('aria-valuenow', porcentajeSeguro.toFixed(2));
+            progressBar.textContent = `${Math.round(porcentajeSeguro)}%`;
+            totalRespondidasEl.textContent = totalRespondidas;
+
+            progressBar.classList.remove('bg-warning', 'bg-info', 'bg-success');
+            if (porcentajeSeguro < 50) {
+                progressBar.classList.add('bg-warning');
+            } else if (porcentajeSeguro < 100) {
+                progressBar.classList.add('bg-info');
+            } else {
+                progressBar.classList.add('bg-success');
+            }
+        }
+
+        function preguntaActual() {
+            return document.querySelector('.pregunta-card-simulador:not(.ocultar-pregunta)');
+        }
+
+        function actualizarBotonesNavegacion() {
+            const actual = preguntaActual();
+            const actualId = actual ? actual.dataset.itemId : null;
+            const indice = botones.findIndex((btn) => btn.dataset.itemId === actualId);
+            const esPrimera = indice <= 0;
+            const esUltima = indice === botones.length - 1;
+
+            document.querySelectorAll('.btn-pregunta-anterior').forEach((btn) => {
+                btn.classList.toggle('d-none', esPrimera);
+            });
+            document.querySelectorAll('.btn-pregunta-siguiente').forEach((btn) => {
+                btn.classList.toggle('d-none', esUltima);
+            });
+            document.querySelectorAll('.btn-finalizar-simulador').forEach((btn) => {
+                btn.classList.toggle('is-last', esUltima);
+            });
+        }
+
+        function mostrarPregunta(itemId) {
+            preguntas.forEach((card) => {
+                card.classList.toggle('ocultar-pregunta', card.dataset.itemId !== String(itemId));
+            });
+            botones.forEach((btn) => {
+                btn.classList.toggle('boton-seleccionado', btn.dataset.itemId === String(itemId));
+            });
+            const actual = preguntaActual();
+            if (actual && preguntaActualLabel) {
+                preguntaActualLabel.textContent = actual.dataset.numero;
+            }
+            actualizarBotonesNavegacion();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function mostrarPreguntaAndClose(itemId) {
+            mostrarPregunta(itemId);
+            const offcanvasEl = document.getElementById('sidebarNav');
+            if (window.bootstrap && offcanvasEl && window.innerWidth < 768) {
+                const instance = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
+                if (instance) {
+                    instance.hide();
+                }
+            }
+        }
+
+        function irRelativa(delta) {
+            const actual = preguntaActual();
+            if (!actual) {
+                return;
+            }
+            const indice = botones.findIndex((btn) => btn.dataset.itemId === actual.dataset.itemId);
+            const siguiente = botones[indice + delta];
+            if (siguiente) {
+                mostrarPregunta(siguiente.dataset.itemId);
+            }
+        }
+
+        function contarPreguntasSinResponder() {
+            let sinResponder = 0;
+            for (const card of preguntas) {
+                const radios = card.querySelectorAll('input[type="radio"].respuesta-radio');
+                if (radios.length === 0) {
+                    sinResponder += 1;
+                    continue;
+                }
+                const grupo = radios[0].name;
+                const seleccionada = card.querySelector(
+                    `input[type="radio"].respuesta-radio[name="${grupo}"]:checked`
+                );
+                if (!seleccionada) {
+                    sinResponder += 1;
+                }
+            }
+            return sinResponder;
+        }
+
+        function primeraPendienteId() {
+            for (const card of preguntas) {
+                const radios = card.querySelectorAll('input[type="radio"].respuesta-radio');
+                if (radios.length === 0) {
+                    return card.dataset.itemId;
+                }
+                const grupo = radios[0].name;
+                const seleccionada = card.querySelector(
+                    `input[type="radio"].respuesta-radio[name="${grupo}"]:checked`
+                );
+                if (!seleccionada) {
+                    return card.dataset.itemId;
+                }
+            }
+            return null;
+        }
+
+        function alertarPreguntasPendientes() {
+            const pendientes = contarPreguntasSinResponder();
+            if (pendientes === 0) {
+                return true;
+            }
+            if (typeof desbloqueoInterfaz === 'function') {
+                desbloqueoInterfaz();
+            }
+            const mensaje = pendientes === 1
+                ? 'Te falta 1 pregunta por contestar.'
+                : `Te faltan ${pendientes} preguntas por contestar.`;
+            alert(mensaje);
+            const pendienteId = primeraPendienteId();
+            if (pendienteId) {
+                mostrarPregunta(pendienteId);
+            }
+            return false;
+        }
+
+        async function guardarRespuesta(input) {
+            const itemId = input.name.replace('item_', '');
+            const opcionId = input.value;
+            const payload = new URLSearchParams();
+
+            payload.append('csrfmiddlewaretoken', csrfToken);
+            payload.append('accion', 'guardar_respuesta');
+            payload.append('item_id', itemId);
+            if (esOpcionesProgresivas) {
+                payload.append('item_opcion_id', opcionId);
+            } else {
+                payload.append('opcion_id', opcionId);
+            }
+
+            cambiosSinGuardar = true;
+            guardadoEnCurso += 1;
+
+            const boton = document.getElementById(`boton-${itemId}`);
+            if (boton) {
+                boton.classList.add('boton-contestada');
+            }
+
+            try {
+                const response = await fetch(`${window.location.pathname}${window.location.search}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: payload.toString()
+                });
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        const errorData = await response.json().catch(() => ({}));
+                        if (errorData.tiempo_agotado && errorData.redirect_url) {
+                            window.location.href = errorData.redirect_url;
+                        }
+                    }
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.ok) {
+                    actualizarProgressBar(data.total_respondidas, data.porcentaje_progreso);
+                    cambiosSinGuardar = false;
+                }
+            } catch (error) {
+                // Si falla la petición, se conserva la advertencia al salir sin guardar.
+            } finally {
+                guardadoEnCurso = Math.max(0, guardadoEnCurso - 1);
+            }
+        }
+
+        form.addEventListener('change', function(e) {
+            if (e.target.classList.contains('respuesta-radio')) {
+                guardarRespuesta(e.target);
+            }
+        });
+
+        botones.forEach((btn) => {
+            btn.addEventListener('click', function() {
+                mostrarPreguntaAndClose(btn.dataset.itemId);
+            });
+        });
+
+        document.querySelectorAll('.btn-pregunta-siguiente').forEach((btn) => {
+            btn.addEventListener('click', function() {
+                irRelativa(1);
+            });
+        });
+
+        document.querySelectorAll('.btn-pregunta-anterior').forEach((btn) => {
+            btn.addEventListener('click', function() {
+                irRelativa(-1);
+            });
+        });
+
+        const accionInput = document.getElementById('accionInput');
+        document.querySelectorAll('.btn-finalizar-simulador').forEach((btn) => {
+            btn.addEventListener('click', function(e) {
+                if (!alertarPreguntasPendientes()) {
+                    e.preventDefault();
+                    return;
+                }
+                e.preventDefault();
+                accionInput.value = 'finalizar';
+                document.querySelectorAll('.btn-finalizar-simulador').forEach((b) => {
+                    b.disabled = true;
+                    b.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Finalizando...';
+                });
+                form.submit();
+            });
+        });
+
+        form.addEventListener('submit', function(e) {
+            const botonSubmit = e.submitter;
+            const requiereCompleta = botonSubmit && botonSubmit.dataset.requiereCompleta === 'true';
+
+            if (requiereCompleta && !alertarPreguntasPendientes()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
+            cambiosSinGuardar = false;
+        }, true);
+
+        window.addEventListener('beforeunload', function(e) {
+            if (cambiosSinGuardar || guardadoEnCurso > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        if (itemInicialId) {
+            mostrarPregunta(itemInicialId);
+        } else {
+            actualizarBotonesNavegacion();
+        }
+
+        {% if tiempo_limite_activo %}
+        const countdownTimer = document.getElementById('countdownTimer');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        let segundosRestantes = parseInt(countdownTimer.dataset.segundos, 10) || 0;
+        let tiempoAgotadoEnviado = false;
+
+        function formatearTiempo(totalSegundos) {
+            const horas = Math.floor(totalSegundos / 3600);
+            const minutos = Math.floor((totalSegundos % 3600) / 60);
+            const segundos = totalSegundos % 60;
+            if (horas > 0) {
+                return `${horas}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+            }
+            return `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+        }
+
+        function actualizarEstiloCountdown() {
+            countdownTimer.classList.remove('warning', 'danger');
+            if (segundosRestantes <= 60) {
+                countdownTimer.classList.add('danger');
+            } else if (segundosRestantes <= 300) {
+                countdownTimer.classList.add('warning');
+            }
+        }
+
+        function finalizarPorTiempoAgotado() {
+            if (tiempoAgotadoEnviado) {
+                return;
+            }
+            tiempoAgotadoEnviado = true;
+            accionInput.value = 'finalizar_tiempo_agotado';
+            cambiosSinGuardar = false;
+            form.submit();
+        }
+
+        function tickCountdown() {
+            countdownDisplay.textContent = formatearTiempo(segundosRestantes);
+            actualizarEstiloCountdown();
+
+            if (segundosRestantes <= 0) {
+                finalizarPorTiempoAgotado();
+                return;
+            }
+
+            segundosRestantes -= 1;
+        }
+
+        tickCountdown();
+        setInterval(tickCountdown, 1000);
+        {% endif %}
+    });
+</script>
+{% endblock %}

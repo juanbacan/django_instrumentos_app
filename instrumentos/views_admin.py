@@ -26,7 +26,8 @@ def _import_json_help_message(instrumento=None):
             <br><small class="text-muted">
                 <code>instrumento.tipo_instrumento</code>: <code>escala_likert</code> (default, requiere <code>escalas</code>)
                 o <code>opciones_progresivas</code> (4 opciones por ítem, sin escalas globales).
-                Opcional: <code>premium</code>, <code>tiempo_limite_*</code>, <code>niveles_retroalimentacion</code>.
+                Opcional: <code>premium</code>, <code>tiempo_limite_*</code>, <code>modo_visualizacion</code>
+                (<code>paginado</code> o <code>simulador</code>), <code>niveles_retroalimentacion</code>.
             </small>
     '''
     if instrumento:
@@ -90,9 +91,9 @@ class InstrumentoAdminView(ModelCRUDView):
     template_list = 'instrumentos/admin/instrumento_list.html'
     template_form = 'core/forms/formAdmin.html'
     
-    list_display = ['nombre', 'slug', 'activo', 'tiempo_configurado', 'num_dimensiones', 'num_items', 'premium', 'created_at']
+    list_display = ['nombre', 'slug', 'activo', 'modo_visualizacion', 'tiempo_configurado', 'num_dimensiones', 'num_items', 'premium', 'created_at']
     search_fields = ['nombre', 'slug', 'descripcion']
-    list_filter = ['activo', 'premium', 'tiempo_limite_activo', 'created_at']
+    list_filter = ['activo', 'premium', 'modo_visualizacion', 'tiempo_limite_activo', 'created_at']
     ordering = ['-created_at']
     paginate_by = 20
 

@@ -27,6 +27,7 @@ def build_test_json(instrumento):
             'tiempo_limite_activo': instrumento.tiempo_limite_activo,
             'tiempo_limite_minutos': instrumento.tiempo_limite_minutos,
             'tipo_instrumento': instrumento.tipo_instrumento,
+            'modo_visualizacion': instrumento.modo_visualizacion,
         },
         'dimensiones': [],
     }

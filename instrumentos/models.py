@@ -41,6 +41,19 @@ class Instrumento(ModeloBase):
         help_text="Define cómo se presentan las opciones y se calcula el puntaje",
     )
 
+    MODO_PAGINADO = 'paginado'
+    MODO_SIMULADOR = 'simulador'
+    MODO_VISUALIZACION_CHOICES = [
+        (MODO_PAGINADO, 'Paginado (varias preguntas por página)'),
+        (MODO_SIMULADOR, 'Simulador (una pregunta con navegación lateral)'),
+    ]
+    modo_visualizacion = models.CharField(
+        max_length=20,
+        choices=MODO_VISUALIZACION_CHOICES,
+        default=MODO_PAGINADO,
+        help_text="Define cómo se muestra el test al realizarlo. El paginado es el modo actual por defecto.",
+    )
+
     def __str__(self):
         return self.nombre
 
@@ -51,6 +64,14 @@ class Instrumento(ModeloBase):
     @property
     def es_opciones_progresivas(self):
         return self.tipo_instrumento == self.TIPO_OPCIONES_PROGRESIVAS
+
+    @property
+    def es_modo_simulador(self):
+        return self.modo_visualizacion == self.MODO_SIMULADOR
+
+    @property
+    def es_modo_paginado(self):
+        return self.modo_visualizacion == self.MODO_PAGINADO
     
     def num_items(self):
         """Cuenta total de ítems asociados a este instrumento"""

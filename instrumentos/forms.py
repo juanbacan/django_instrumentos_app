@@ -11,7 +11,17 @@ class InstrumentoForm(ModelBaseForm):
     
     class Meta:
         model = Instrumento
-        fields = ['nombre', 'slug', 'descripcion', 'activo', 'premium', 'tiempo_limite_activo', 'tiempo_limite_minutos']
+        fields = [
+            'nombre',
+            'slug',
+            'descripcion',
+            'activo',
+            'premium',
+            'tipo_instrumento',
+            'modo_visualizacion',
+            'tiempo_limite_activo',
+            'tiempo_limite_minutos',
+        ]
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -29,6 +39,12 @@ class InstrumentoForm(ModelBaseForm):
             'activo': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
+            'tipo_instrumento': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'modo_visualizacion': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'tiempo_limite_activo': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -41,6 +57,8 @@ class InstrumentoForm(ModelBaseForm):
         help_texts = {
             'slug': 'URL amigable del instrumento (ej: riasec, test-vocacional)',
             'activo': 'Si está activo, el instrumento estará disponible para los usuarios',
+            'tipo_instrumento': 'Escala Likert global u opciones propias de cada ítem',
+            'modo_visualizacion': 'Paginado: varias preguntas por página. Simulador: una pregunta a la vez con listado lateral.',
             'tiempo_limite_activo': 'Activa un tiempo máximo para completar el test',
             'tiempo_limite_minutos': 'Duración en minutos. Si indicas minutos, el límite se activa automáticamente.',
         }

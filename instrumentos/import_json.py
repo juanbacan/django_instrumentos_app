@@ -113,6 +113,17 @@ def validate_test_json_structure(data):
     else:
         _validate_opciones_progresivas(data)
 
+    modo = (data.get('instrumento') or {}).get(
+        'modo_visualizacion',
+        Instrumento.MODO_PAGINADO,
+    )
+    modos_validos = {choice[0] for choice in Instrumento.MODO_VISUALIZACION_CHOICES}
+    if modo not in modos_validos:
+        raise ImportTestError(
+            f'modo_visualizacion inválido: "{modo}". '
+            f'Valores permitidos: {", ".join(sorted(modos_validos))}.'
+        )
+
 
 def parse_test_json_text(json_text):
     try:
@@ -149,6 +160,10 @@ def _apply_instrumento_fields(instrumento, instrumento_data):
     instrumento.tipo_instrumento = instrumento_data.get(
         'tipo_instrumento',
         Instrumento.TIPO_ESCALA_LIKERT,
+    )
+    instrumento.modo_visualizacion = instrumento_data.get(
+        'modo_visualizacion',
+        Instrumento.MODO_PAGINADO,
     )
     instrumento.save()
 
@@ -252,6 +267,10 @@ def import_test_from_json(data, instrumento_objetivo=None):
                 'tiempo_limite_activo': instrumento_data.get('tiempo_limite_activo', False),
                 'tiempo_limite_minutos': instrumento_data.get('tiempo_limite_minutos'),
                 'tipo_instrumento': tipo,
+                'modo_visualizacion': instrumento_data.get(
+                    'modo_visualizacion',
+                    Instrumento.MODO_PAGINADO,
+                ),
             },
         )
 

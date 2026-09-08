@@ -138,22 +138,54 @@ def detalle_evaluacion(request, slug):
     return render(request, 'instrumentos/detalle_evaluacion.html', context)
 
 
+def _guardar_respuestas_de_items(intento, instrumento, items, post_data):
+    if instrumento.es_escala_likert:
+        opciones_validas = {
+            str(op.id): op
+            for op in instrumento.opciones.all()
+        }
+    else:
+        item_ids = [item.id for item in items]
+        opciones_validas = {
+            str(op.id): op
+            for op in ItemOpcion.objects.filter(item_id__in=item_ids)
+        }
+
+    for item in items:
+        opcion_id = post_data.get(f'item_{item.id}')
+        if opcion_id and opcion_id in opciones_validas:
+            _guardar_respuesta_item(intento, instrumento, item, opcion_id)
+
+
+def _item_inicial_id(items_ordenados, respuestas_guardadas):
+    for item in items_ordenados:
+        if item.id not in respuestas_guardadas:
+            return item.id
+    return items_ordenados[0].id if items_ordenados else None
+
+
+def _redirect_realizar(request, instrumento, pagina_actual='1'):
+    if instrumento.es_modo_simulador:
+        return redirect(request.path)
+    return redirect(f"{request.path}?pagina={pagina_actual}")
+
+
 # ==========================================
 # VISTA 3: Realizar la Evaluación (Formulario)
 # ==========================================
 @login_required
 def realizar_evaluacion(request, slug, intento_id):
     """
-    GET: Muestra el formulario con ítems paginados y aleatorizados.
+    GET: Muestra el formulario (paginado o simulador, según el instrumento).
     POST: Guarda respuestas parciales o finaliza el intento.
     """
     import random
     from django.core.paginator import Paginator
-    
+
     PREGUNTAS_POR_PAGINA = 10
-    
+
     instrumento = get_object_or_404(Instrumento, slug=slug, activo=True)
-    
+
     # Verificar acceso premium
     redirect_response = check_premium_access(request.user, instrumento)
     if redirect_response:
@@ -163,9 +195,9 @@ def realizar_evaluacion(request, slug, intento_id):
             'Obtén acceso premium para poder completarlo.'
         )
         return redirect_response
-    
+
     intento = get_object_or_404(Intento, id=intento_id, usuario=request.user, instrumento=instrumento)
-    
+
     # Si el intento ya está completado, redirigir a resultados
     if intento.completado:
         messages.info(request, 'Este intento ya fue completado.')
@@ -177,21 +209,21 @@ def realizar_evaluacion(request, slug, intento_id):
             'Se agotó el tiempo límite del test. Tu evaluación se finalizó con las respuestas registradas.'
         )
         return redirect('instrumentos:ver_resultados', intento_id=intento.id)
-    
+
     # Obtener opciones globales (solo escala Likert)
     opciones = (
         instrumento.opciones.all().order_by('orden')
         if instrumento.es_escala_likert
         else EscalaOpcion.objects.none()
     )
-    
+
     # Generar o recuperar orden aleatorio de ítems
     if not intento.orden_items:
         items_ids = list(_items_queryset(instrumento).values_list('id', flat=True))
         random.shuffle(items_ids)
         intento.orden_items = items_ids
         intento.save(update_fields=['orden_items'])
-    
+
     items_by_id = {
         item.id: item
         for item in _items_queryset(instrumento).filter(id__in=intento.orden_items)
@@ -201,7 +233,10 @@ def realizar_evaluacion(request, slug, intento_id):
         for item_id in intento.orden_items
         if item_id in items_by_id
     ]
-    
+
+    for numero, item in enumerate(items_ordenados, start=1):
+        item.numero_pregunta = numero
+
     total_preguntas = len(items_ordenados)
 
     respuestas_guardadas = _respuestas_guardadas_map(intento)
@@ -238,11 +273,12 @@ def realizar_evaluacion(request, slug, intento_id):
             'total_preguntas': total_preguntas,
             'porcentaje_progreso': round(porcentaje_ajax, 2),
         })
-    
+
     # Procesar POST (guardar respuestas parciales o finalizar)
     if request.method == 'POST':
         accion = request.POST.get('accion', 'guardar')
         siguiente_pagina = request.POST.get('siguiente_pagina')
+        pagina_actual = request.POST.get('pagina', '1')
 
         if accion == 'finalizar_tiempo_agotado':
             finalizar_por_tiempo_agotado(intento)
@@ -259,40 +295,27 @@ def realizar_evaluacion(request, slug, intento_id):
             )
             return redirect('instrumentos:ver_resultados', intento_id=intento.id)
 
-        # Guardar respuestas de la página actual
-        pagina_actual = request.POST.get('pagina', '1')
-        paginator = Paginator(items_ordenados, PREGUNTAS_POR_PAGINA)
-        pagina_obj_post = paginator.get_page(pagina_actual)
-
-        if instrumento.es_escala_likert:
-            opciones_validas = {
-                str(op.id): op
-                for op in instrumento.opciones.all()
-            }
+        if instrumento.es_modo_simulador:
+            items_a_guardar = items_ordenados
         else:
-            item_ids_pagina = [item.id for item in pagina_obj_post.object_list]
-            opciones_validas = {
-                str(op.id): op
-                for op in ItemOpcion.objects.filter(item_id__in=item_ids_pagina)
-            }
+            paginator = Paginator(items_ordenados, PREGUNTAS_POR_PAGINA)
+            pagina_obj_post = paginator.get_page(pagina_actual)
+            items_a_guardar = pagina_obj_post.object_list
 
-        for item in pagina_obj_post.object_list:
-            opcion_id = request.POST.get(f'item_{item.id}')
-            if opcion_id and opcion_id in opciones_validas:
-                _guardar_respuesta_item(intento, instrumento, item, opcion_id)
-        
+        _guardar_respuestas_de_items(intento, instrumento, items_a_guardar, request.POST)
+
         # Si es finalizar, verificar que todas las preguntas estén respondidas
         if accion == 'finalizar':
             total_items = total_preguntas
             respuestas_actuales = intento.respuestas.values('item_id').distinct().count()
-            
+
             if respuestas_actuales < total_items:
                 messages.warning(
-                    request, 
+                    request,
                     f'⚠️ No puedes finalizar aún. Debes responder todas las preguntas. Has respondido {respuestas_actuales} de {total_items} preguntas.'
                 )
-                return redirect(f"{request.path}?pagina={pagina_actual}")
-            
+                return _redirect_realizar(request, instrumento, pagina_actual)
+
             # Finalizar test
             try:
                 with transaction.atomic():
@@ -300,41 +323,51 @@ def realizar_evaluacion(request, slug, intento_id):
                 return redirect('instrumentos:ver_resultados', intento_id=intento.id)
             except Exception as e:
                 messages.error(request, f'❌ Ocurrió un error al finalizar la evaluación: {str(e)}. Por favor, intenta de nuevo.')
-                return redirect(f"{request.path}?pagina={pagina_actual}")
-        
-        # Navegación entre páginas
-        if siguiente_pagina:
+                return _redirect_realizar(request, instrumento, pagina_actual)
+
+        # Navegación entre páginas (solo modo paginado)
+        if siguiente_pagina and not instrumento.es_modo_simulador:
             return redirect(f"{request.path}?pagina={siguiente_pagina}")
 
     # Refrescar respuestas luego de cualquier guardado POST
     respuestas_guardadas = _respuestas_guardadas_map(intento)
-    
-    # Paginación
-    paginator = Paginator(items_ordenados, PREGUNTAS_POR_PAGINA)
-    pagina_numero = request.GET.get('pagina', 1)
-    
-    try:
-        pagina_obj = paginator.get_page(pagina_numero)
-    except:
-        pagina_obj = paginator.get_page(1)
-    
+
     # Calcular progreso
     total_respondidas = intento.respuestas.values('item_id').distinct().count()
     porcentaje_progreso = (total_respondidas / total_preguntas * 100) if total_preguntas > 0 else 0
-    
+
     context = {
         'instrumento': instrumento,
         'intento': intento,
-        'pagina_obj': pagina_obj,
         'opciones': opciones,
         'respuestas_guardadas': respuestas_guardadas,
         'total_preguntas': total_preguntas,
         'total_respondidas': total_respondidas,
         'porcentaje_progreso': round(porcentaje_progreso, 1),
-        'es_ultima_pagina': not pagina_obj.has_next(),
         'tiempo_limite_activo': instrumento.tiene_limite_tiempo,
         'segundos_restantes': intento.segundos_restantes(),
     }
+
+    if instrumento.es_modo_simulador:
+        context.update({
+            'items': items_ordenados,
+            'item_inicial_id': _item_inicial_id(items_ordenados, respuestas_guardadas),
+        })
+        return render(request, 'instrumentos/realizar_evaluacion_simulador.html', context)
+
+    # Paginación
+    paginator = Paginator(items_ordenados, PREGUNTAS_POR_PAGINA)
+    pagina_numero = request.GET.get('pagina', 1)
+
+    try:
+        pagina_obj = paginator.get_page(pagina_numero)
+    except Exception:
+        pagina_obj = paginator.get_page(1)
+
+    context.update({
+        'pagina_obj': pagina_obj,
+        'es_ultima_pagina': not pagina_obj.has_next(),
+    })
     return render(request, 'instrumentos/realizar_evaluacion.html', context)
 
 

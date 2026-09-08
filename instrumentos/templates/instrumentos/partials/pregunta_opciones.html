@@ -1,0 +1,42 @@
+{% load core_extras %}
+{% if instrumento.es_opciones_progresivas %}
+<div class="respuesta-lista-progresiva" role="radiogroup" aria-label="Opciones para la pregunta {{ pregunta_numero }}">
+    {% for opcion in item.opciones.all %}
+        <div>
+            <input
+                class="btn-check respuesta-radio"
+                type="radio"
+                name="item_{{ item.id }}"
+                id="item_{{ item.id }}_opcion_{{ opcion.id }}"
+                value="{{ opcion.id }}"
+                {% if respuestas_guardadas|get_item:item.id == opcion.id %}checked{% endif %}>
+            <label
+                class="respuesta-option-progresiva"
+                for="item_{{ item.id }}_opcion_{{ opcion.id }}">
+                <span class="opcion-indicador" aria-hidden="true"></span>
+                <span class="opcion-texto">{{ opcion.texto }}</span>
+            </label>
+        </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="respuesta-grid" role="radiogroup" aria-label="Opciones para la pregunta {{ pregunta_numero }}">
+    {% for opcion in opciones %}
+        <div>
+            <input
+                class="btn-check respuesta-radio"
+                type="radio"
+                name="item_{{ item.id }}"
+                id="item_{{ item.id }}_opcion_{{ opcion.id }}"
+                value="{{ opcion.id }}"
+                {% if respuestas_guardadas|get_item:item.id == opcion.id %}checked{% endif %}>
+            <label
+                class="respuesta-option"
+                for="item_{{ item.id }}_opcion_{{ opcion.id }}">
+                <span class="valor">{{ opcion.valor_nominal }}</span>
+                <span class="etiqueta">{{ opcion.etiqueta }}</span>
+            </label>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
