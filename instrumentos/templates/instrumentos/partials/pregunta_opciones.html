@@ -19,6 +19,28 @@
         </div>
     {% endfor %}
 </div>
+{% elif instrumento.es_modo_simulador %}
+<div class="respuesta-lista-progresiva" role="radiogroup" aria-label="Opciones para la pregunta {{ pregunta_numero }}">
+    {% for opcion in opciones %}
+        <div>
+            <input
+                class="btn-check respuesta-radio"
+                type="radio"
+                name="item_{{ item.id }}"
+                id="item_{{ item.id }}_opcion_{{ opcion.id }}"
+                value="{{ opcion.id }}"
+                {% if respuestas_guardadas|get_item:item.id == opcion.id %}checked{% endif %}>
+            <label
+                class="respuesta-option-progresiva"
+                for="item_{{ item.id }}_opcion_{{ opcion.id }}">
+                <span class="opcion-indicador" aria-hidden="true"></span>
+                <span class="opcion-texto">
+                    <span class="valor me-1">{{ opcion.valor_nominal }}.</span>{{ opcion.etiqueta }}
+                </span>
+            </label>
+        </div>
+    {% endfor %}
+</div>
 {% else %}
 <div class="respuesta-grid" role="radiogroup" aria-label="Opciones para la pregunta {{ pregunta_numero }}">
     {% for opcion in opciones %}

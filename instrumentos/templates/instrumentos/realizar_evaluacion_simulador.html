@@ -44,6 +44,22 @@
         transform: none;
     }
 
+    .pregunta-card-simulador .respuesta-option-progresiva {
+        align-items: center;
+        min-height: 60px;
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+    }
+
+    .pregunta-card-simulador .respuesta-option-progresiva .valor {
+        font-weight: 700;
+        color: var(--bs-secondary-color);
+    }
+
+    .btn-check:checked + .respuesta-option-progresiva .valor {
+        color: var(--bs-primary);
+    }
+
     .simulador-sidebar-card {
         background: #fff;
         border-radius: 1rem;
@@ -237,23 +253,18 @@
                                     Pregunta {{ item.numero_pregunta }} <span>de {{ total_preguntas }}</span>
                                 </h2>
                             </div>
-                            <div class="d-flex align-items-start">
-                                <div class="pregunta-badge me-3">{{ item.numero_pregunta }}</div>
-                                <div class="flex-grow-1">
-                                    <h5 class="pregunta-texto">{{ item.texto }}</h5>
-                                </div>
-                            </div>
+                            <h5 class="pregunta-texto">{{ item.texto }}</h5>
                             {% include 'instrumentos/partials/pregunta_opciones.html' with pregunta_numero=item.numero_pregunta %}
 
-                            <div class="d-flex justify-content-between align-items-center gap-2 mt-4 pt-3 border-top d-none d-md-flex">
+                            <div class="d-flex align-items-center gap-2 mt-4 pt-3 border-top d-none d-md-flex">
                                 <button type="button" class="btn btn-nav btn-nav-back rounded-pill btn-pregunta-anterior">
                                     <i class="fa-solid fa-chevron-left me-1"></i>Anterior
                                 </button>
-                                <div class="d-flex gap-2">
+                                <div class="d-flex gap-2 ms-auto">
                                     <button type="button" class="btn btn-nav btn-nav-next rounded-pill btn-pregunta-siguiente">
                                         Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
                                     </button>
-                                    <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill btn-finalizar-simulador" data-requiere-completa="true">
+                                    <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill btn-finalizar-simulador d-none" data-requiere-completa="true">
                                         <i class="fa-solid fa-check-circle me-1"></i>Finalizar
                                     </button>
                                 </div>
@@ -266,16 +277,18 @@
 
         <div class="navigation-fixed d-md-none">
             <div class="container">
-                <div class="d-flex justify-content-between align-items-center nav-controls gap-2">
+                <div class="d-flex align-items-center nav-controls gap-2">
                     <button type="button" class="btn btn-nav btn-nav-back rounded-pill btn-pregunta-anterior">
                         <i class="fa-solid fa-chevron-left me-1"></i>Atrás
                     </button>
-                    <button type="button" class="btn btn-nav btn-nav-next rounded-pill btn-pregunta-siguiente">
-                        Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
-                    </button>
-                    <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill btn-finalizar-simulador" data-requiere-completa="true">
-                        <i class="fa-solid fa-check-circle me-1"></i>Finalizar
-                    </button>
+                    <div class="d-flex gap-2 ms-auto">
+                        <button type="button" class="btn btn-nav btn-nav-next rounded-pill btn-pregunta-siguiente">
+                            Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
+                        </button>
+                        <button type="submit" class="btn btn-nav btn-nav-finalizar rounded-pill btn-finalizar-simulador d-none" data-requiere-completa="true">
+                            <i class="fa-solid fa-check-circle me-1"></i>Finalizar
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -330,6 +343,7 @@
             const indice = botones.findIndex((btn) => btn.dataset.itemId === actualId);
             const esPrimera = indice <= 0;
             const esUltima = indice === botones.length - 1;
+            const todasContestadas = contarPreguntasSinResponder() === 0;
 
             document.querySelectorAll('.btn-pregunta-anterior').forEach((btn) => {
                 btn.classList.toggle('d-none', esPrimera);
@@ -338,7 +352,8 @@
                 btn.classList.toggle('d-none', esUltima);
             });
             document.querySelectorAll('.btn-finalizar-simulador').forEach((btn) => {
-                btn.classList.toggle('is-last', esUltima);
+                btn.classList.toggle('d-none', !todasContestadas);
+                btn.classList.toggle('is-last', esUltima && todasContestadas);
             });
         }
 
@@ -456,6 +471,7 @@
             if (boton) {
                 boton.classList.add('boton-contestada');
             }
+            actualizarBotonesNavegacion();
 
             try {
                 const response = await fetch(`${window.location.pathname}${window.location.search}`, {
